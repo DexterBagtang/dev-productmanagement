@@ -1,0 +1,59 @@
+.divider {
+    border-right: 1px solid #fff;
+    padding-left: 10%;
+}
+
+.card-header {
+    text-align: center;
+    background-color: #44709c;
+    color: white;
+    border-radius: 20px 20px 0px 0px!important;
+}
+
+.card-body {
+    padding: 70px 0px;
+    border-radius: 0px 0px 20px 20px!important;
+}
+
+.card {
+    border-radius: 20px;
+    border: none;
+    background: rgba(0, 0, 0, .5);
+    transform: translate(-50%, -50%);
+    top: 100%;
+    left: 50%;
+    z-index: 2;
+}
+
+.btn_login,
+#email,
+#password {
+    border-radius: 20px;
+}
+
+.btn_login {
+    background-color: #1e3c72;
+    border-color: #1e3b7200;
+    display: inline-block;
+}
+
+body {
+    background: url("side.jpg");
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    background-repeat: no-repeat;
+    height: 100%;
+}
+
+body,
+html {
+    height: 100%;
+}
+
+.logout-warning{
+  padding:10px !important;
+  border-radius: 10px;
+  background-color:  red;
+  color:white;
+}

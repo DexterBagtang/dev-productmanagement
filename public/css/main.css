@@ -1,0 +1,62 @@
+a {
+    text-decoration: none!important;
+}
+
+.main_links {
+    color: #ffffff!important;
+}
+
+.main_links:hover {
+    color: #ffffff!important;
+}
+
+.navigation_color {
+    background-color: #D72130;
+}
+
+.mdl-layout__drawer {
+    background-color: #3B8BEB;
+}
+
+.philcomlogo {
+    width: 150px!important;
+    margin: 5px!important;
+}
+
+.users_info {
+    float: right!important;
+    margin: 5px 10px!important;
+}
+
+.mdl-layout-title {
+    color: #ffffff;
+}
+
+.main_links {
+    display: inline-block;
+    color: #ffffff;
+    text-decoration: none;
+    background-color: #1B65A0!important;
+}
+
+.sub_links {
+    color: #ffffff!important;
+    background-color: #5DA2D5;
+}
+
+.sub_links:hover {
+    background-color: #5DA2D5!important;
+}
+
+.sub_links::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 2px;
+    background: #ffffff;
+    transition: width .4s;
+}
+
+.sub_links:hover::after {
+    width: 100%;
+}
