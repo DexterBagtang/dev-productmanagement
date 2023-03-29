@@ -15,7 +15,8 @@ class AdminMiddleware
      */
     public function handle($request, Closure $next)
     {
-      if ($request->user() && $request->user()->role != '1')
+        //Admin role and Pm supervisor role exempted
+      if ($request->user() && $request->user()->role != '1' && $request->user()->role != '3')
       {
         auth()->logout();
         return redirect('/login')->withErrors(['You tried to access a module without sufficient privileges.']);

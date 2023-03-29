@@ -7,7 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class NewSaleRequest extends Mailable
+class ProjectDesignUploaded extends Mailable
 {
     public $project_title;
     use Queueable, SerializesModels;
@@ -19,8 +19,7 @@ class NewSaleRequest extends Mailable
      */
     public function __construct($project_title)
     {
-        $this->project_title = $project_title;
-//        dd($this->project_title);
+        $this->project_title=$project_title;
     }
 
     /**
@@ -30,9 +29,10 @@ class NewSaleRequest extends Mailable
      */
     public function build()
     {
-        $actionMessage='A new sales request has been created; please review and approve it as soon as possible.';
+        $actionMessage = 'Project Design Uploaded. Please check the design as soon as possible.';
         return $this
-            ->markdown('mail.sales')->with('project_title',$this->project_title)->with('actionMessage',$actionMessage);
-//            ->view('mail.sales');
+            ->subject('Project Design Uploaded')
+            ->markdown('mail.sales')
+            ->with('project_title',$this->project_title)->with('actionMessage',$actionMessage);
     }
 }

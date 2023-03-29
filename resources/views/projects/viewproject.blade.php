@@ -104,9 +104,9 @@
                             <td>History</td>
                             <td>PM Assigned</td>
                             <td>Project Requirements 1</td>
-                            <td>Project Requirements 2</td>
+                            {{--<td>Project Requirements 2</td>
                             <td>Project Requirements 3</td>
-                            <td>Project Requirements 4</td>
+                            <td>Project Requirements 4</td>--}}
 
                             <td>Project Age</td>
                             <td>Project Code</td>
@@ -133,14 +133,14 @@
                            <!--  <td><a href="{{action ('SalesrequestController@viewprojectpdf') }}" class="clickable">{{$salesrequest->project_requirements_files}}</a></td> -->
                             <td><a href="/storage/uploads/{{ $salesrequest->project_requirements_files }}" target="_blank" class="btn btn-default red">{{substr($salesrequest->project_requirements_files,14)}}</a></td>
 
-                            <td><a href="/storage/uploads/{{ $salesrequest->project_requirements_files_2 }}" target="_blank" class="btn btn-default red">{{substr($salesrequest->project_requirements_files_2,14)}}</a></td>
+                            {{--<td><a href="/storage/uploads/{{ $salesrequest->project_requirements_files_2 }}" target="_blank" class="btn btn-default red">{{substr($salesrequest->project_requirements_files_2,14)}}</a></td>
 
 
                             <td><a href="/storage/uploads/{{ $salesrequest->project_requirements_files_3 }}" target="_blank" class="btn btn-default red">{{substr($salesrequest->project_requirements_files_3,14)}}</a></td>
 
 
                             <td><a href="/storage/uploads/{{ $salesrequest->project_requirements_files_4 }}" target="_blank" class="btn btn-default red">{{substr($salesrequest->project_requirements_files_4,14)}}</a></td>
-
+--}}
 
 			    <td>{{$salesrequest->project_age}}</td>
                             <td>{{$salesrequest->project_code}}</td>

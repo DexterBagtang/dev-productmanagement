@@ -518,7 +518,7 @@ class BiddingController extends Controller
     {
         $salesrequests = DB::table('salesrequests')
             ->where('salesrequests.status', '=', 'PM Mark Up Technical Check')
-            ->orWhere('salesrequests.status', '=', 'PM Mark Up Technical Check(Revision)')
+            ->orWhere('salesrequests.status', 'like', '%PM Mark Up Technical Check%')
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')

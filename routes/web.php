@@ -11,7 +11,10 @@
 |
 */
 use Illuminate\Http\File;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+
 
 Route::resource('malls','MallController');
 Route::resource('salesrequests','SalesrequestController');
@@ -24,7 +27,10 @@ Route::get('/', function () {
 
 
 //-----------------------test email notification----------------------------//
-
+Route::get('/notify', 'SalesrequestController@notify');
+//Route::get('/notify', function () {
+//    return view('mail.sales');
+//});
 
 //---------------------------------------------------//
 
@@ -187,7 +193,7 @@ Route::post('user_expirechangePassword', 'HomeController@user_expirechangePasswo
 Route::get('/flowchart','HomeController@showFlowChart');
 Route::get('/viewprojectpdf','SalesrequestController@viewprojectpdf');
 
-
+Route::get('/manual','HomeController@manual');
 
 // Authentication Routes...
 $this->get('login', 'Auth\LoginController@showLoginForm')->name('login');

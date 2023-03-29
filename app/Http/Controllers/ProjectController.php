@@ -11,6 +11,9 @@ use App\Bidding;
 use App\Layout;
 use DB;
 use Auth;
+use App\Mail\ProjectDesignUploaded;
+use App\Mail\ProjectDesignDisapproved;
+use Illuminate\Support\Facades\Mail;
 
 class ProjectController extends Controller
 {
@@ -278,6 +281,11 @@ class ProjectController extends Controller
         DB::table('request_logs')->insert(
             ['user_id' => Auth::user()->id, 'sales_request_id' => $id2, 'action' => 'Upload Project Design', 'query' => $projects, 'date_time' => now()]
         );
+
+        $emailToNotify = DB::table('users')->where('role',2)->where('active','yes')->pluck('email');
+
+        Mail::to($emailToNotify)->send(new ProjectDesignUploaded($salerequests->project_title));
+
         return redirect('/project' . Auth::user()->id)->with('success', 'Upload Success');
     }
 
@@ -482,6 +490,11 @@ class ProjectController extends Controller
             $projects->pm_supervisor_id = Auth::user()->id;
             $projects->remarks = $request->get('remarks');
             $projects->save();
+
+            $emailToNotify = DB::table('users')->where('role',2)->where('active','yes')->pluck('email');
+            Mail::to($emailToNotify)->send(new ProjectDesignDisapproved($salerequests->project_title));
+
+            return redirect('/project' . Auth::user()->id)->with('success', 'Upload Success');
 
             DB::table('request_logs')->insert(
                 ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Disapproved Project Design', 'remarks' => $request->get('remarks'), 'query' => $projects, 'date_time' => now()]
