@@ -10,12 +10,6 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
-use Illuminate\Http\File;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
-
-
 Route::resource('malls','MallController');
 Route::resource('salesrequests','SalesrequestController');
 Route::resource('projects','ProjectController');
@@ -23,32 +17,6 @@ Route::resource('biddings','BiddingController');
 
 Route::get('/', function () {
     return view('index');
-});
-
-
-//-----------------------test email notification----------------------------//
-Route::get('/notify', 'SalesrequestController@notify');
-//Route::get('/notify', function () {
-//    return view('mail.sales');
-//});
-
-//---------------------------------------------------//
-
-Route::get('/test',function(){
-    $dir = public_path().'/storage/uploads/';
-    $data = scandir($dir);
-//            $data = File::allFiles($dir);
-
-//    foreach ($data as $x){
-//        $y = substr($x,14);
-//        $datas[]= $y;
-//    }
-//    dd($data);
-
-//    $data = File::allFiles;
-//    return $data;
-//   dd($data);
-    return view('salesrequests.timeline')->with('data',$data)->with('dir',$dir);
 });
 
 //Auth::routes();
@@ -63,17 +31,17 @@ Route::get('/mall/create_malls', function () {
 Route::get('malls', 'MallController@index');
 Route::get('edit_mall{id}', 'MallController@edit');
 
+
+    Route::get('notify', 'SalesrequestController@notify');
+
+
+
 Route::get('salesrequest', 'SalesrequestController@index');
 Route::get('create_salesrequest', 'SalesrequestController@create');
 Route::get('edit_salesrequest{id}', 'SalesrequestController@edit');
 Route::get('revise_project', 'SalesrequestController@revise_project');
 Route::get('revise_salesrequest{id}', 'SalesrequestController@revise');
 Route::post('revised_salesrequest{id}', 'SalesrequestController@revised');
-Route::get('timeline{id}', 'SalesrequestController@timeline');
-
-
-
-
 
 Route::get('sr_disapproved_header', 'SalesrequestController@sr_disapproved_header');
 
@@ -183,7 +151,8 @@ Route::post('uploadfiles{id}', 'SalesrequestController@uploadfiles');
 Route::get('viewDesign{id}', 'SalesrequestController@viewDesign');
 
 
-Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/home', 'HomeController@index')->name('home')->middleware('active');
+
 Route::get('/changePassword','HomeController@showChangePasswordForm');
 Route::post('user_changePassword', 'HomeController@user_changePassword');
 
@@ -191,9 +160,22 @@ Route::get('/expirechangePassword','HomeController@showExpireChangePasswordForm'
 Route::post('user_expirechangePassword', 'HomeController@user_expirechangePassword');
 
 Route::get('/flowchart','HomeController@showFlowChart');
+//Route::get('/viewprojectpdf','SalesrequestController@showviewprojectpdf');
 Route::get('/viewprojectpdf','SalesrequestController@viewprojectpdf');
+Route::get('/manual','HomeController@userManual');
 
-Route::get('/manual','HomeController@manual');
+//upload cer
+Route::get('upload-cer-header', 'SalesrequestController@upload_cer_header');
+Route::get('upload-cer-details{id}', 'SalesrequestController@upload_cer_details');
+Route::post('uploaded-cer{id}', 'SalesrequestController@uploaded_cer');
+
+//upload cer
+Route::get('release-pontp-header', 'SalesrequestController@release_pontp_header');
+Route::get('release-pontp-details{id}', 'SalesrequestController@release_pontp_details');
+Route::post('released-pontp{id}', 'SalesrequestController@released_pontp');
+
+
+
 
 // Authentication Routes...
 $this->get('login', 'Auth\LoginController@showLoginForm')->name('login');

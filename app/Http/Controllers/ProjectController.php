@@ -11,8 +11,11 @@ use App\Bidding;
 use App\Layout;
 use DB;
 use Auth;
-use App\Mail\ProjectDesignUploaded;
-use App\Mail\ProjectDesignDisapproved;
+
+use App\Mail\EmailNotification;
+
+//use App\Mail\ProjectDesignUploaded;
+//use App\Mail\ProjectDesignDisapproved;
 use Illuminate\Support\Facades\Mail;
 
 class ProjectController extends Controller
@@ -44,7 +47,8 @@ class ProjectController extends Controller
                 ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
                 ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
                 ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
-                ->select('salesrequests.*', 'users.username', 'projects.project_id', 'projects.remarks', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+                ->select('salesrequests.*', 'users.username', 'projects.project_id', 'projects.remarks', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+                ->orderBy('salesrequests.created_at', 'desc')
                 ->get();
         } else if ($role == '3') {
             $salesrequests = DB::table('salesrequests')
@@ -55,7 +59,8 @@ class ProjectController extends Controller
                 ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
                 ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
                 ->select('salesrequests.*', 'users.username', 'projects.project_id', 'projects.remarks', 'projects.project_code', 'malls.mall_name',
-                    DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+                    DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+                ->orderBy('salesrequests.created_at', 'desc')
                 ->get();
         } else {
             $salesrequests = DB::table('salesrequests')
@@ -63,7 +68,8 @@ class ProjectController extends Controller
                 ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
                 ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
                 ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
-                ->select('salesrequests.*', 'users.username', 'projects.project_id', 'projects.remarks', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+                ->select('salesrequests.*', 'users.username', 'projects.project_id', 'projects.remarks', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+                ->orderBy('salesrequests.created_at', 'desc')
                 ->get();
         }
 //    dd($salesrequests,$role);
@@ -147,6 +153,7 @@ class ProjectController extends Controller
      */
     public function update(Request $request, $id)
     {
+//        dd($request->all());
 
 
         //remove old uploads
@@ -191,18 +198,22 @@ class ProjectController extends Controller
                 $fileName = $request->existing_sld[$i];
             } else {
                 $request->validate([
-                    'sld' => 'required'
+//                    'sld' => 'required'
                 ]);
+                $fileName = null;
             }
 
-            $slds = new Sld([
-                'project_id' => $id,
-                'sld_file' => $fileName
-            ]);
-            $slds->save();
-            DB::table('logs')->insert(
-                ['user_id' => Auth::user()->id, 'form' => 'Upload Project SLD', 'query' => $slds, 'created_at' => now()]
-            );
+
+                $slds = new Sld([
+                    'project_id' => $id,
+                    'sld_file' => $fileName
+                ]);
+                $slds->save();
+
+                DB::table('logs')->insert(
+                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project SLD', 'query' => $slds, 'created_at' => now()]
+                );
+
         }
 
         //bom uploads
@@ -222,7 +233,8 @@ class ProjectController extends Controller
             } else {
                 $request->validate([
                     'bom' => 'required'
-
+                ],[
+                    'bom.required' => 'Bill of Quantities required !'
                 ]);
             }
 
@@ -252,18 +264,21 @@ class ProjectController extends Controller
                 $fileName = $request->existing_layout[$i];
             } else {
                 $request->validate([
-                    'layout' => 'required'
+//                    'layout' => 'required'
                 ]);
+                $fileName=null;
             }
 
-            $layouts = new Layout([
-                'project_id' => $id,
-                'layout_file' => $fileName
-            ]);
-            $layouts->save();
-            DB::table('logs')->insert(
-                ['user_id' => Auth::user()->id, 'form' => 'Upload Project Layout', 'query' => $layouts, 'created_at' => now()]
-            );
+
+                $layouts = new Layout([
+                    'project_id' => $id,
+                    'layout_file' => $fileName
+                ]);
+                $layouts->save();
+                DB::table('logs')->insert(
+                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project Layout', 'query' => $layouts, 'created_at' => now()]
+                );
+
         }
 
         //project update
@@ -282,9 +297,18 @@ class ProjectController extends Controller
             ['user_id' => Auth::user()->id, 'sales_request_id' => $id2, 'action' => 'Upload Project Design', 'query' => $projects, 'date_time' => now()]
         );
 
-        $emailToNotify = DB::table('users')->where('role',2)->where('active','yes')->pluck('email');
+        /*email notification*/
+        $emailToNotify = array_filter(DB::table('users')->where('role', 3)->where('active', 'yes')->pluck('email')->toArray());
+        $emailData = [
+            'subject' => 'Project Design Uploaded',
+            'body' =>'A project design has been uploaded and needs to be reviewed.',
+            'title' => $salerequests->project_title,
+            'targetDate' => $salerequests->date_needed,
+            'status' => $salerequests->status,
+        ];
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+        /*end of email notification*/
 
-        Mail::to($emailToNotify)->send(new ProjectDesignUploaded($salerequests->project_title));
 
         return redirect('/project' . Auth::user()->id)->with('success', 'Upload Success');
     }
@@ -333,6 +357,7 @@ class ProjectController extends Controller
         return view('projects.approveproject', compact('salesrequests'))->with('boms', $boms)->with('slds', $slds)->with('layouts', $layouts);
     }
 
+//
     public function approved_project(Request $request, $id)
     {
 
@@ -345,145 +370,170 @@ class ProjectController extends Controller
         $salerequests = Salesrequest::find($id);
         if ($request->get('approved_status') == 'Yes') {
 
-            //remove old uploads
-            DB::table('slds')->where('project_id', '=', $id2)->delete();
-            DB::table('boms')->where('project_id', '=', $id2)->delete();
-            DB::table('layouts')->where('project_id', '=', $id2)->delete();
-
-            if (isset($request->existing_sld_name)) {
-                for ($a = 0; $a < count($request->existing_sld_name); $a++) {
-                    $file_path = public_path() . '/storage/uploads/' . $request->existing_sld_name[$a];
-                    unlink($file_path);
-                }
-            }
-
-            if (isset($request->existing_bom_name)) {
-                for ($a = 0; $a < count($request->existing_bom_name); $a++) {
-                    $file_path = public_path() . '/storage/uploads/' . $request->existing_bom_name[$a];
-                    unlink($file_path);
-                }
-            }
-
-            if (isset($request->existing_layout_name)) {
-                for ($a = 0; $a < count($request->existing_layout_name); $a++) {
-                    $file_path = public_path() . '/storage/uploads/' . $request->existing_layout_name[$a];
-                    unlink($file_path);
-                }
-            }
-
-            //sld uploads
-            for ($i = 0; $i < count($request->sld_number); $i++) {
-                if ($request->hasfile('sld.' . $i)) {
-                    $fileName = $request->sld[$i]->getClientOriginalName();
-                    $unique_id = uniqid();
-                    $fileName = $unique_id . '-' . $fileName;
-                    $request->sld[$i]->storeAs('public/uploads', $fileName);
-
-                    if (!empty($request->existing_sld[$i])) {
-                        $file_path = public_path() . '/storage/uploads/' . $request->existing_sld[$i];
-                        unlink($file_path);
-                    }
-                } else if (!empty($request->existing_sld[$i])) {
-                    $fileName = $request->existing_sld[$i];
-                } else {
-                    $request->validate([
-                        'sld' => 'required'
-                    ]);
-                }
-
-                $slds = new Sld([
-                    'project_id' => $id2,
-                    'sld_file' => $fileName
-                ]);
-                $slds->save();
-                DB::table('logs')->insert(
-                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project SLD', 'query' => $slds, 'created_at' => now()]
-                );
-            }
-
-            //bom uploads
-            for ($i = 0; $i < count($request->bom_number); $i++) {
-                if ($request->hasfile('bom.' . $i)) {
-                    $fileName = $request->bom[$i]->getClientOriginalName();
-                    $unique_id = uniqid();
-                    $fileName = $unique_id . '-' . $fileName;
-                    $request->bom[$i]->storeAs('public/uploads', $fileName);
-
-                    if (!empty($request->existing_bom[$i])) {
-                        $file_path = public_path() . '/storage/uploads/' . $request->existing_bom[$i];
-                        unlink($file_path);
-                    }
-                } else if (!empty($request->existing_bom[$i])) {
-                    $fileName = $request->existing_bom[$i];
-                } else {
-                    $request->validate([
-                        'bom' => 'required'
-
-                    ]);
-                }
-
-                $boms = new Bom([
-                    'project_id' => $id2,
-                    'bom_file' => $fileName
-                ]);
-                $boms->save();
-                DB::table('logs')->insert(
-                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project BOM', 'query' => $boms, 'created_at' => now()]
-                );
-            }
-
-            //layout uploads
-            for ($i = 0; $i < count($request->layout_number); $i++) {
-                if ($request->hasfile('layout.' . $i)) {
-                    $fileName = $request->layout[$i]->getClientOriginalName();
-                    $unique_id = uniqid();
-                    $fileName = $unique_id . '-' . $fileName;
-                    $request->layout[$i]->storeAs('public/uploads', $fileName);
-
-                    if (!empty($request->existing_layout[$i])) {
-                        $file_path = public_path() . '/storage/uploads/' . $request->existing_layout[$i];
-                        unlink($file_path);
-                    }
-                } else if (!empty($request->existing_layout[$i])) {
-                    $fileName = $request->existing_layout[$i];
-                } else {
-                    $request->validate([
-                        'layout' => 'required'
-                    ]);
-                }
-
-                $layouts = new Layout([
-                    'project_id' => $id2,
-                    'layout_file' => $fileName
-                ]);
-                $layouts->save();
-                DB::table('logs')->insert(
-                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project Layout', 'query' => $layouts, 'created_at' => now()]
-                );
-            }
+//            //remove old uploads
+//            DB::table('slds')->where('project_id', '=', $id2)->delete();
+//            DB::table('boms')->where('project_id', '=', $id2)->delete();
+//            DB::table('layouts')->where('project_id', '=', $id2)->delete();
+//
+//            if (isset($request->existing_sld_name)) {
+//                for ($a = 0; $a < count($request->existing_sld_name); $a++) {
+//                    $file_path = public_path() . '/storage/uploads/' . $request->existing_sld_name[$a];
+//                    unlink($file_path);
+//                }
+//            }
+//
+//            if (isset($request->existing_bom_name)) {
+//                for ($a = 0; $a < count($request->existing_bom_name); $a++) {
+//                    $file_path = public_path() . '/storage/uploads/' . $request->existing_bom_name[$a];
+//                    unlink($file_path);
+//                }
+//            }
+//
+//            if (isset($request->existing_layout_name)) {
+//                for ($a = 0; $a < count($request->existing_layout_name); $a++) {
+//                    $file_path = public_path() . '/storage/uploads/' . $request->existing_layout_name[$a];
+//                    unlink($file_path);
+//                }
+//            }
+//
+//            //sld uploads
+//            for ($i = 0; $i < count($request->sld_number); $i++) {
+//                if ($request->hasfile('sld.' . $i)) {
+//                    $fileName = $request->sld[$i]->getClientOriginalName();
+//                    $unique_id = uniqid();
+//                    $fileName = $unique_id . '-' . $fileName;
+//                    $request->sld[$i]->storeAs('public/uploads', $fileName);
+//
+//                    if (!empty($request->existing_sld[$i])) {
+//                        $file_path = public_path() . '/storage/uploads/' . $request->existing_sld[$i];
+//                        unlink($file_path);
+//                    }
+//                } else if (!empty($request->existing_sld[$i])) {
+//                    $fileName = $request->existing_sld[$i];
+//                } else {
+//                    $request->validate([
+////                        'sld' => 'required'
+//                    ]);
+//                    $fileName = null;
+//                }
+//
+//                $slds = new Sld([
+//                    'project_id' => $id2,
+//                    'sld_file' => $fileName
+//                ]);
+//                $slds->save();
+//                DB::table('logs')->insert(
+//                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project SLD', 'query' => $slds, 'created_at' => now()]
+//                );
+//            }
+//
+//            //bom uploads
+//            for ($i = 0; $i < count($request->bom_number); $i++) {
+//                if ($request->hasfile('bom.' . $i)) {
+//                    $fileName = $request->bom[$i]->getClientOriginalName();
+//                    $unique_id = uniqid();
+//                    $fileName = $unique_id . '-' . $fileName;
+//                    $request->bom[$i]->storeAs('public/uploads', $fileName);
+//
+//                    if (!empty($request->existing_bom[$i])) {
+//                        $file_path = public_path() . '/storage/uploads/' . $request->existing_bom[$i];
+//                        unlink($file_path);
+//                    }
+//                } else if (!empty($request->existing_bom[$i])) {
+//                    $fileName = $request->existing_bom[$i];
+//                } else {
+//                    $request->validate([
+//                        'bom' => 'required'
+//
+//                    ]);
+//                }
+//
+//                $boms = new Bom([
+//                    'project_id' => $id2,
+//                    'bom_file' => $fileName
+//                ]);
+//                $boms->save();
+//                DB::table('logs')->insert(
+//                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project BOM', 'query' => $boms, 'created_at' => now()]
+//                );
+//            }
+//
+//            //layout uploads
+//            for ($i = 0; $i < count($request->layout_number); $i++) {
+//                if ($request->hasfile('layout.' . $i)) {
+//                    $fileName = $request->layout[$i]->getClientOriginalName();
+//                    $unique_id = uniqid();
+//                    $fileName = $unique_id . '-' . $fileName;
+//                    $request->layout[$i]->storeAs('public/uploads', $fileName);
+//
+//                    if (!empty($request->existing_layout[$i])) {
+//                        $file_path = public_path() . '/storage/uploads/' . $request->existing_layout[$i];
+//                        unlink($file_path);
+//                    }
+//                } else if (!empty($request->existing_layout[$i])) {
+//                    $fileName = $request->existing_layout[$i];
+//                } else {
+//                    $request->validate([
+////                        'layout' => 'required'
+//                    ]);
+//                    $fileName = null;
+//                }
+//
+//                $layouts = new Layout([
+//                    'project_id' => $id2,
+//                    'layout_file' => $fileName
+//                ]);
+//                $layouts->save();
+//                DB::table('logs')->insert(
+//                    ['user_id' => Auth::user()->id, 'form' => 'Upload Project Layout', 'query' => $layouts, 'created_at' => now()]
+//                );
+//            }
 
 
             $salerequests->status = 'Purchasing Bidding';
             $projects = Project::find($id2);
             $projects->design_status = 'Approved';
             $projects->pm_supervisor_id = Auth::user()->id;
+//            $projects->remarks = $request->get('remarks');
             $projects->save();
 
             if (Bidding::where('sales_request_id', $id)->count() <= 0) {
 
                 $biddings = new Bidding([
-                    'sales_request_id' => $id
+                    'sales_request_id' => $id,
+                    'pm_remarks' => $request->get('remarks')
+
                 ]);
                 $biddings->save();
+
             }
             DB::table('request_logs')->insert(
-                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Approved Project Design', 'query' => $projects, 'date_time' => now()]
+                ['user_id' => Auth::user()->id,
+                    'sales_request_id' => $id,
+                    'action' => 'Approved Project Design',
+                    'remarks' => $request->get('remarks'),
+                    'query' => $projects, 'date_time' => now()]
             );
+
+
+            /*email notification*/
+            $emailToNotify = array_filter(DB::table('users')->where('role', 4)->where('active', 'yes')->pluck('email')->toArray());
+            $emailData = [
+                'subject' => 'Project Design Approved - Project Ready for Bidding',
+                'body' =>'The project design has been approved. The project is now in the bidding phase. Please log in to the system to proceed with adding bidders for the project.',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+            ];
+            Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+            /*end of email notification*/
+
         } else {
 
             $request->validate([
                 'remarks' => 'required'
             ]);
+
             $salerequests->status = 'PM -> Redesign';
             $projects = Project::find($id2);
             $projects->design_status = 'Disapproved';
@@ -491,14 +541,26 @@ class ProjectController extends Controller
             $projects->remarks = $request->get('remarks');
             $projects->save();
 
-            $emailToNotify = DB::table('users')->where('role',2)->where('active','yes')->pluck('email');
-            Mail::to($emailToNotify)->send(new ProjectDesignDisapproved($salerequests->project_title));
-
-            return redirect('/project' . Auth::user()->id)->with('success', 'Upload Success');
-
             DB::table('request_logs')->insert(
-                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Disapproved Project Design', 'remarks' => $request->get('remarks'), 'query' => $projects, 'date_time' => now()]
+                ['user_id' => Auth::user()->id,
+                    'sales_request_id' => $id,
+                    'action' => 'Disapproved Project Design',
+                    'remarks' => $request->get('remarks'),
+                    'query' => $projects, 'date_time' => now()]
             );
+
+
+            /*email notification*/
+            $emailToNotify = array_filter(DB::table('users')->where('role', 2)->where('active', 'yes')->pluck('email')->toArray());
+            $emailData = [
+                'subject' => 'Project Design Disapproved',
+                'body' =>'Project design has been disapproved. Please log in to the system to review the details and make the necessary adjustments.',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+            ];
+            Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+            /*end of email notification*/
         }
 
 
@@ -508,6 +570,9 @@ class ProjectController extends Controller
             ['user_id' => Auth::user()->id, 'form' => 'Approve Project', 'query' => $salerequests, 'created_at' => now()]
         );
 
-        return redirect('/project' . Auth::user()->id)->with('success', 'Project Design has been review');
+
+
+        return redirect('/project' . Auth::user()->id)->with('success', 'Project Design has been reviewed');
     }
+
 }

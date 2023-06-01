@@ -65,8 +65,7 @@
             </div><br />
           @endif
 
-         <embed type="pdf" src="https://pm.philcom.com/img/PM.pdf" width="100%" height="700" type="application/pdf">
-{{--            <iframe src="" width="100%" height="700" frameborder="0"></iframe>--}}
+         <embed src="https://pm.philcom.com/img/PM.pdf" width="100%" height="700" type="application/pdf">
 <a href='img/PM.pdf'>LINK</a>
         </div>
         <!-- /page content -->

@@ -54,6 +54,7 @@
                 <li><a href="{{ action('SalesrequestController@viewdocs') }}"><i class="fa fa-upload"></i>Upload
                         Files</a></li>
             @endif
+
             @if (Auth::user()->role == '1')
                 <li><a><i class="fa fa-user-secret"></i> Admin Panel <span class="fa fa-chevron-down"></span></a>
                     <ul class="nav child_menu">
@@ -70,16 +71,15 @@
                     <ul class="nav child_menu">
                         <li><a href="{{ action('Auth\RegisterController@viewusers') }}"><i class="fa fa-users"></i>Users</a>
                         </li>
-                        {{--            <li><a href="{{ action('HomeController@showResetPasswordForm') }}"><i class="fa fa-refresh"></i>Reset Password</a></li>--}}
-                        {{--            <li><a href="{{ action('SalesrequestController@viewlogs') }}">Project Logs</a></li>--}}
                     </ul>
                 </li>
             @endif
+            
         </ul>
     </div>
 
     <a href="{{asset('Manual of Project Management System.pdf')}}" target="_blank">
-        <button style="position: absolute;bottom:0;left: 0" type="button" href="google.com"
+        <button style="position: absolute;bottom:0;left: 0" type="button"
                 class="btn btn-danger btn-block">
             <i class="fa fa-book"></i>Manual
         </button>

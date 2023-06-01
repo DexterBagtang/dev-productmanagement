@@ -14,9 +14,11 @@ use App\Bidding;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use App\Mail\NewSaleRequest;
-use App\Mail\SaleRequestDisapproved;
-use App\Mail\SaleRequestApproved;
+
+use App\Mail\EmailNotification;
+
+//use App\Mail\SaleRequestDisapproved;
+//use App\Mail\SaleRequestApproved;
 
 
 class SalesrequestController extends Controller
@@ -47,8 +49,14 @@ class SalesrequestController extends Controller
             ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
-            ->orderBy('salesrequests.sales_request_id', 'desc')
+            ->select('salesrequests.*',
+                'users.username',
+                'projects.project_code',
+                'malls.mall_name',
+                DB::raw("DATE_FORMAT(salesrequests.date_needed,'%d-%b-%Y') AS date_needed"),
+                DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age")
+            )
+            ->orderBy('salesrequests.created_at', 'desc')
             ->get();
 //    dd($salesrequests);
 
@@ -64,15 +72,32 @@ class SalesrequestController extends Controller
     {
         $malls = DB::table('malls')
             ->select('malls.mall_id', 'malls.mall_name')
+            ->orderBy('mall_name')
             ->get();
-        return view('salesrequests.createsalesrequest', compact(['malls']));
+
+        $data = view('salesrequests.createsalesrequest', compact(['malls']))->render();
+
+        return response()->json($data);
     }
 
     public function notify()
     {
 //        Notification::send('Dexter.Bagtang@philcom.com', new NewSaleNotification());
+
+        $emailToNotify = array_filter(DB::table('users')->where('role', 1)->where('active', 'yes')->pluck('email')->toArray());
+
+
+//        dd($emailToNotify);
+
+        $emailData = [
+            'subject' => 'Notification Test',
+            'body' => 'Notification Test with emails',
+            'title' => 'test title',
+            'targetDate' => now(),
+            'status' => 'notification test',
+        ];
 //
-        Mail::to('Dexter.Bagtang@philcom.com')->send(new NewSaleRequest);
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
         dd('sent');
     }
 
@@ -188,10 +213,17 @@ class SalesrequestController extends Controller
         DB::table('request_logs')->insert(
             ['user_id' => Auth::user()->id, 'sales_request_id' => $sales_request_id, 'action' => 'Create Sales Request', 'query' => $salerequests, 'date_time' => now()]
         );
-        $emailToNotify = DB::table('users')->where('role',3)->where('active','yes')->pluck('email');
-//        dd($emailToNotify);
 
-        Mail::to($emailToNotify)->send(new NewSaleRequest($request->get('project_title')));
+        $emailToNotify = array_filter(DB::table('users')->where('role', 3)->where('active', 'yes')->pluck('email')->toArray());
+        $emailData = [
+            'subject' => 'New Sales Request',
+            'body' => ' A sales request has been created.',
+            'title' => $salerequests->project_title,
+            'targetDate' => $salerequests->date_needed,
+            'status' => $salerequests->status,
+        ];
+
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
 
         return redirect('/salesrequests')->with('success', 'Sales Request has been added');
     }
@@ -216,155 +248,22 @@ class SalesrequestController extends Controller
     public function edit($id)
     {
         //$salesrequests = Salesrequest::find($id);
-        $salesrequests = DB::table('salesrequests')
+        $salesrequest = DB::table('salesrequests')
             ->where('sales_request_id', '=', $id)
             ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
             ->select('salesrequests.*', 'malls.mall_name')
-            ->get();
+            ->first();
 
         $malls = DB::table('malls')
             ->where('mall_id', '!=', $id)
             ->select('malls.mall_id', 'malls.mall_name')
             ->get();
 
-        return view('salesrequests.editsalesrequest', compact('salesrequests'), compact('malls'));
+        $data = view('salesrequests.editsalesrequest', compact('salesrequest'), compact('malls'))->render();
+
+        return response()->json($data);
     }
 
-    public function revise($id)
-    {
-        //$salesrequests = Salesrequest::find($id);
-//        $salesrequests = DB::table('salesrequests')
-        $salesrequests = Salesrequest::query()
-            ->where('sales_request_id', '=', $id)
-            ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
-            ->select('salesrequests.*', 'malls.mall_name')
-            ->get();
-
-        $malls = DB::table('malls')
-            ->where('mall_id', '!=', $id)
-            ->select('malls.mall_id', 'malls.mall_name')
-            ->get();
-
-        return view('salesrequests.revise_salesrequest', compact('salesrequests'), compact('malls'));
-    }
-
-    public function revise_project()
-    {
-//        $dir = public_path();
-//        $data = Storage::files($dir);
-//
-////        $files = File::allFiles($dir);
-//
-////        $data = $files->only(['filename']);
-////        $data = Builder::for(File::allFiles($dir))->where('filename','=','chowking');
-////        $data = scandir($dir)->only(['5cf0bee3609d9-SMPP Chowking Annex .jpg']);
-////        foreach ($files as $file){
-////            $cut = substr($file,14);
-////            $data[] = $cut;
-////        }
-////        $filtered = array_filter($data,function ($yellow){
-////            return $yellow !== 'RFQ - STRUCTURED CABLING.pdf';
-////        });
-////        $data = array_values($filtered);
-//        dd($data);
-
-        $salesrequests = DB::table('salesrequests')
-            ->take(100)
-            ->where('salesrequests.reason_for_revision', '!=', null)
-            ->orwhere('salesrequests.status', 'like', "Project Completed%")
-            ->orwhere('salesrequests.status', '=', 'Sales Proposal Status')
-            ->orwhere('salesrequests.status', '=', 'Project Completion/Uploading of Documents')
-//            ->orWhere('salesrequests.status','=','Project Completed (For Revision)')
-            ->orderBy('sales_request_id', 'desc')
-            ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
-            ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
-            ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
-            ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'users.password', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
-            ->get();
-//        dd($filtered);
-
-        return view('salesrequests.revise_projects', compact(['salesrequests']));
-    }
-
-    public function timeline($id)
-    {
-//        $dir = public_path().'/storage/uploads/';
-//        $files = scandir($dir);
-//        $timeline = DB::table('request_logs')
-//            ->where('sales_request_id','=',$id)
-//            ->leftJoin('users', 'request_logs.user_id', '=', 'users.id')
-//            ->select('request_logs.*','users.username')
-//            ->get();
-
-//        dd($files);
-
-
-//        return view('salesrequests.timeline')->with('timeline',$timeline);
-    }
-
-    public function revised(Request $request, $id)
-    {
-//        $request->validate([
-//            'reason_for_revision' => 'required',
-//            'return' => 'required',
-//        ]);
-
-        if ($request->get('return') == 'projectdesign') {
-            $status = 'PM -> Redesign(Revision)';
-        } elseif ($request->get('return') == 'bidding') {
-            $status = 'Purchasing Rebidding(Revision)';
-        } elseif ($request->get('return') == 'markup') {
-            $status = 'Revenue Re-Mark Up(Revision)';
-        } elseif ($request->get('return') == 'reviewrequest') {
-            $status = 'PM Review of Request(Revision)';
-        } elseif ($request->get('return') == 'reviewdesign') {
-            $status = 'PM Review of Design(Revision)';
-        } elseif ($request->get('return') == 'checkbidding') {
-            $status = 'PM Check Contractor Cost(Revision)';
-        } elseif ($request->get('return') == 'technicalcheck') {
-            $status = 'PM Mark Up Technical Check(Revision)';
-        } elseif ($request->get('return') == 'revenuehead') {
-            $status = 'Revenue Head Unit for Checking(Revision)';
-        } elseif ($request->get('return') == 'financehead') {
-            $status = 'Finance Head Mark Up Approval(Revision)';
-        }
-
-
-        $salerequests = Salesrequest::find($id);
-        $salerequests->status = $status;
-        $salerequests->reason_for_revision = $request->get('reason_for_revision');
-        $salerequests->revision = $request->get('revision') + 1;
-
-        $salerequests->update();
-
-        DB::table('logs')->insert(
-            ['user_id' => Auth::user()->id,
-                'form' => 'Update Sales Request',
-                'query' => $salerequests,
-                'created_at' => now()]
-        );
-
-        DB::table('request_logs')->insert(
-            ['user_id' => Auth::user()->id,
-                'sales_request_id' => $id,
-                'action' => $status,
-                'remarks' => $request->get('reason_for_revision'),
-                'query' => $salerequests,
-                'date_time' => now()]
-        );
-
-        return redirect('/revise_project')->with('success', 'Sales Request has been updated');
-    }
-
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -438,8 +337,159 @@ class SalesrequestController extends Controller
             ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Edit Sales Request', 'query' => $salerequests, 'date_time' => now()]
         );
 
-        return redirect('/salesrequests')->with('success', 'Sales Request has been updated');
+        $emailToNotify = array_filter(DB::table('users')->where('role', 3)->where('active', 'yes')->pluck('email')->toArray());
+        $emailData = [
+            'subject' => 'Sales Request Updated',
+            'body' => 'A sales request has been updated.',
+            'title' => $salerequests->project_title,
+            'targetDate' => $salerequests->date_needed,
+            'status' => $salerequests->status,
+
+        ];
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+
+//        return redirect('/salesrequests')->with('success', 'Sales Request has been updated');
+        return back()->with('success', 'Sales Request has been updated');
+
     }
+
+    public function revise($id)
+    {
+        //$salesrequests = Salesrequest::find($id);
+//        $salesrequests = DB::table('salesrequests')
+        $salesrequest = Salesrequest::query()
+            ->where('sales_request_id', '=', $id)
+            ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
+            ->select('salesrequests.*', 'malls.mall_name')
+            ->first();
+
+        $malls = DB::table('malls')
+            ->where('mall_id', '!=', $id)
+            ->select('malls.mall_id', 'malls.mall_name')
+            ->get();
+
+        return view('salesrequests.revise_salesrequest', compact('salesrequest'), compact('malls'));
+    }
+
+    public function revise_project()
+    {
+//        $dir = public_path();
+//        $data = Storage::files($dir);
+//
+////        $files = File::allFiles($dir);
+//
+////        $data = $files->only(['filename']);
+////        $data = Builder::for(File::allFiles($dir))->where('filename','=','chowking');
+////        $data = scandir($dir)->only(['5cf0bee3609d9-SMPP Chowking Annex .jpg']);
+////        foreach ($files as $file){
+////            $cut = substr($file,14);
+////            $data[] = $cut;
+////        }
+////        $filtered = array_filter($data,function ($yellow){
+////            return $yellow !== 'RFQ - STRUCTURED CABLING.pdf';
+////        });
+////        $data = array_values($filtered);
+//        dd($data);
+
+        $salesrequests = DB::table('salesrequests')
+            ->take(100)
+//            ->where('salesrequests.reason_for_revision', '!=', null)
+//            ->orwhere('salesrequests.status', 'like', "Project Completed%")
+//            ->orwhere('salesrequests.status', '=', 'Sales Proposal Status')
+//            ->orwhere('salesrequests.status', '=', 'Project Completion/Uploading of Documents')
+//            ->orWhere('salesrequests.status','=','Project Completed (For Revision)')
+            ->orderBy('sales_request_id', 'desc')
+            ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
+            ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
+            ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
+            ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
+            ->select('salesrequests.*', 'users.username', 'users.password', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
+            ->get();
+//        dd($filtered);
+
+        return view('salesrequests.revise_projects', compact(['salesrequests']));
+    }
+
+    public function timeline($id)
+    {
+//        $dir = public_path().'/storage/uploads/';
+//        $files = scandir($dir);
+//        $timeline = DB::table('request_logs')
+//            ->where('sales_request_id','=',$id)
+//            ->leftJoin('users', 'request_logs.user_id', '=', 'users.id')
+//            ->select('request_logs.*','users.username')
+//            ->get();
+
+//        dd($files);
+
+
+//        return view('salesrequests.timeline')->with('timeline',$timeline);
+    }
+
+    public function revised(Request $request, $id)
+    {
+//        $request->validate([
+//            'reason_for_revision' => 'required',
+//            'return' => 'required',
+//        ]);
+
+        if ($request->get('return') == 'projectdesign') {
+            $status = 'PM -> Redesign(Revision)';
+        } elseif ($request->get('return') == 'bidding') {
+            $status = 'Purchasing Rebidding(Revision)';
+        } elseif ($request->get('return') == 'markup') {
+            $status = 'Revenue Re-Mark Up(Revision)';
+        } elseif ($request->get('return') == 'reviewrequest') {
+            $status = 'PM Review of Request(Revision)';
+        } elseif ($request->get('return') == 'reviewdesign') {
+            $status = 'PM Review of Design(Revision)';
+        } elseif ($request->get('return') == 'checkbidding') {
+            $status = 'PM Review Bidders(Revision)';
+        } elseif ($request->get('return') == 'technicalcheck') {
+            $status = 'PM Mark Up Technical Check(Revision)';
+        } elseif ($request->get('return') == 'revenuehead') {
+            $status = 'Revenue Head Unit for Checking(Revision)';
+        } elseif ($request->get('return') == 'financehead') {
+            $status = 'Finance Head Mark Up Approval(Revision)';
+        }
+
+
+        $salerequests = Salesrequest::find($id);
+        $salerequests->status = $status;
+        $salerequests->reason_for_revision = $request->get('reason_for_revision');
+        $salerequests->revision = $request->get('revision') + 1;
+
+        $salerequests->update();
+
+        DB::table('logs')->insert(
+            ['user_id' => Auth::user()->id,
+                'form' => 'Update Sales Request',
+                'query' => $salerequests,
+                'created_at' => now()]
+        );
+
+        DB::table('request_logs')->insert(
+            ['user_id' => Auth::user()->id,
+                'sales_request_id' => $id,
+                'action' => $status,
+                'remarks' => $request->get('reason_for_revision'),
+                'query' => $salerequests,
+                'date_time' => now()]
+        );
+
+        return redirect('/revise_project')->with('success', 'Sales Request has been updated');
+    }
+
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+
 
     /**
      * Remove the specified resource from storage.
@@ -455,12 +505,15 @@ class SalesrequestController extends Controller
     public function approved_header()
     {
         $salesrequests = DB::table('salesrequests')
-            ->where('pm_approval_status', '=', '')
+//            ->where('pm_approval_status', '=', '')
+            ->where('salesrequests.status', 'like', '%PM Review of Request%')
             ->orWhere('salesrequests.status', '=', 'PM Review of Request(Revision)')
-            ->orwhereNull('pm_approval_status')
+            ->where('salesrequests.status', '!=', 'Cancelled Project')
+//            ->orwhereNull('pm_approval_status')
             ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
-            ->select('salesrequests.*', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'projects.project_code', 'malls.mall_name', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
             ->get();
 
 //    dd($salesrequests);
@@ -495,6 +548,7 @@ class SalesrequestController extends Controller
      */
     public function approved_sr(Request $request, $id)
     {
+
         $request->validate([
             'approved_status' => 'required'
         ]);
@@ -503,10 +557,13 @@ class SalesrequestController extends Controller
         $salerequests->pm_supervisor_id = $request->get('approver_id');
         $salerequests->pm_approval_status = $request->get('approved_status');
         $salerequests->pm_remarks = $request->get('remarks');
+
+//        dd($salerequests);
         if ($request->get('approved_status') == 'Yes') {
 
             $request->validate([
-                'pm_assigned_id' => 'required'
+                'pm_assigned_id' => 'required',
+                'remarks' => 'required'
             ]);
 
             $salerequests->status = 'PM Designing';
@@ -515,6 +572,7 @@ class SalesrequestController extends Controller
 //            dd($salerequests);
 
             if (Project::where('sales_request_id', $request->get('sales_request_id2'))->count() <= 0) {
+
                 $projects = new Project([
                     'sales_request_id' => $request->get('sales_request_id2'),
                     'project_code' => Helper::auto_generate_pc($mall_id)
@@ -522,12 +580,29 @@ class SalesrequestController extends Controller
                 $projects->save();
             }
             DB::table('request_logs')->insert(
-                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Approved Sales Request', 'query' => $salerequests, 'date_time' => now()]
+                ['user_id' => Auth::user()->id,
+                    'sales_request_id' => $id,
+                    'action' => 'Approved Sales Request',
+                    'remarks' => $request->get('remarks'),
+                    'query' => $salerequests,
+                    'date_time' => now()]
             );
 
-            $emailToNotify = DB::table('users')->where('role',2)->where('id',$salerequests->pm_assigned_id)->where('active','yes')->pluck('email');
+            //------Email Notification ---------
+//            $emailToNotify = DB::table('users')->where('role', 2)->where('id', $salerequests->pm_assigned_id)->where('active', 'yes')->pluck('email');
+            $emailToNotify = array_filter(
+                DB::table('users')
+                    ->where('role', 2)
+                    ->where('active', 'yes')
+                    ->pluck('email')->toArray());
 
-            Mail::to($emailToNotify)->send(new SaleRequestApproved($salerequests->project_title));
+            $emailData = [
+                'subject' => 'Project Design',
+                'body' => ' The request has been approved. Please log in to the system to view the project details and proceed with uploading the design.',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+            ];
 
         } else {
             $request->validate([
@@ -536,13 +611,24 @@ class SalesrequestController extends Controller
             $salerequests->status = 'Sales -> Disapproved';
 
             DB::table('request_logs')->insert(
-                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Disapproved Sales Request', 'remarks' => $request->get('remarks'), 'query' => $salerequests, 'date_time' => now()]
+                ['user_id' => Auth::user()->id,
+                    'sales_request_id' => $id,
+                    'action' => 'Disapproved Sales Request',
+                    'remarks' => $request->get('remarks'),
+                    'query' => $salerequests, 'date_time' => now()]
             );
 
-            $emailToNotify = DB::table('users')->where('role',8)->where('active','yes')->pluck('email');
-            Mail::to($emailToNotify)->send(new SaleRequestDisapproved($salerequests->project_title));
-        }
+            $emailToNotify = DB::table('users')->where('role', 8)->where('active', 'yes')->pluck('email');
+            $emailData = [
+                'subject' => 'Sales Request Disapproved',
+                'body' => ' Request disapproved, Please log in to the system and view the details of the request.',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+                'status' => $salerequests->status,
 
+            ];
+        }
 
         $salerequests->save();
 
@@ -550,7 +636,10 @@ class SalesrequestController extends Controller
             ['user_id' => Auth::user()->id, 'form' => 'Approve Sales Request', 'query' => $salerequests, 'created_at' => now()]
         );
 
-        return redirect('/approved_header')->with('success', 'Sales Request has been review');
+
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+
+        return redirect('/approved_header')->with('success', 'Sales Request has been reviewed');
     }
 
     public function sr_disapproved_header()
@@ -561,7 +650,8 @@ class SalesrequestController extends Controller
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
             ->get();
 
 
@@ -576,7 +666,8 @@ class SalesrequestController extends Controller
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
             ->get();
 
 
@@ -668,10 +759,28 @@ class SalesrequestController extends Controller
             );
 
             DB::table('request_logs')->insert(
-                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'PO / NTP Upload', 'query' => $salerequests, 'date_time' => now()]
+                ['user_id' => Auth::user()->id,
+                    'sales_request_id' => $id,
+                    'action' => 'PO / NTP Upload',
+                    'query' => $salerequests,
+                    'date_time' => now()]
             );
 
+            //-----Email Notification-----
+            $emailToNotify = array_filter(DB::table('users')->where('role', 5)->where('active', 'yes')->pluck('email')->toArray());
+            $emailData = [
+                'subject' => 'PO / NTP Uploaded',
+                'body' => 'Purchase Order (PO) and Notice to Proceed (NTP) documents have been successfully uploaded for the project. ',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+            ];
+            Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+            //-----Email Notification----
+
             return redirect('/po_ntp_header')->with('success', 'Transaction Success.');
+
+
         } else {
             $request->validate([
                 'remarks' => 'required',
@@ -682,22 +791,50 @@ class SalesrequestController extends Controller
 
             if ($request->get('project_return') == 'Revenue') {
                 $salerequests->status = 'Revenue Re-Mark Up';
+
+                //-----Email Notification-----
+                $emailToNotify = array_filter(DB::table('users')->where('role', 5)->where('active', 'yes')->pluck('email')->toArray());
+                $emailData = [
+                    'subject' => 'Revision Required',
+                    'body' => 'Project has been returned to the Revenue team for revision. Please log in to the system and review the updates required.',
+                    'title' => $salerequests->project_title,
+                    'targetDate' => $salerequests->date_needed,
+                    'status' => $salerequests->status,
+                ];
+                Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+                //-----Email Notification----
             } else if ($request->get('project_return') == 'Purchasing') {
                 $salerequests->status = 'Purchasing Rebidding';
             } else if ($request->get('project_return') == 'PM') {
                 $salerequests->status = 'PM -> Redesign';
+                //-----Email Notification-----
+                $emailToNotify = array_filter(DB::table('users')->where('role', 2)->where('active', 'yes')->pluck('email')->toArray());
+                $emailData = [
+                    'subject' => 'Revision Required',
+                    'body' => 'Project has been returned to the PM Design team for revision. Please log in to the system and review the updates required.',
+                    'title' => $salerequests->project_title,
+                    'targetDate' => $salerequests->date_needed,
+                    'status' => $salerequests->status,
+                ];
+                Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+                //-----Email Notification----
             }
 
             $salerequests->save();
 
             DB::table('request_logs')->insert(
-                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Sales Disapproved Proposal Revision', 'remarks' => $request->get('remarks'), 'query' => $salerequests, 'date_time' => now()]
+                ['user_id' => Auth::user()->id,
+                    'sales_request_id' => $id,
+                    'action' => 'Sales Disapproved Proposal Revision',
+                    'remarks' => $request->get('remarks'),
+                    'query' => $salerequests, 'date_time' => now()]
             );
             DB::table('logs')->insert(
                 ['user_id' => Auth::user()->id, 'form' => 'PO / NTP Upload', 'query' => $salerequests, 'created_at' => now()]
             );
 
-            return redirect('/po_ntp_header')->with('success', 'Transaction Success.');
+
+            return redirect('/po_ntp_header')->with('success', 'Update Successful.');
         }
     }
 
@@ -709,7 +846,9 @@ class SalesrequestController extends Controller
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
+            ->orderBy('salesrequests.created_at', 'desc')
             ->get();
 
 
@@ -747,28 +886,34 @@ class SalesrequestController extends Controller
 
     public function proof_upload(Request $request, $id)
     {
+//        dd($request->all());
+//        dd($request->proof_of_sending);
+//        $allFiles = [];
+        foreach ($request->proof_of_sending as $file) {
+            if ($request->hasfile('proof_of_sending')) {
+                $fileName = $file->getClientOriginalName();
+                $unique_id = uniqid();
+                $fileName = $unique_id . '-' . $fileName;
+                $file->storeAs('public/uploads', $fileName);
 
-        if ($request->hasfile('proof_of_sending')) {
-            $fileName = $request->proof_of_sending->getClientOriginalName();
-            $unique_id = uniqid();
-            $fileName = $unique_id . '-' . $fileName;
-            $request->proof_of_sending->storeAs('public/uploads', $fileName);
-
-            if (!empty($request->existing_proof_of_sending)) {
-                $file_path = public_path() . '/storage/uploads/' . $request->existing_proof_of_sending;
-                unlink($file_path);
+//                if (!empty($request->existing_proof_of_sending)) {
+//                    $file_path = public_path() . '/storage/uploads/' . $request->existing_proof_of_sending;
+//                    unlink($file_path);
+//                }
+                $allFiles[] = $fileName;
+            } else if (!empty($request->existing_proof_of_sending)) {
+                $fileName = $request->existing_proof_of_sending;
+            } else {
+                $request->validate([
+                    'proof_of_sending' => 'required'
+                ]);
             }
-        } else if (!empty($request->existing_proof_of_sending)) {
-            $fileName = $request->existing_proof_of_sending;
-        } else {
-            $request->validate([
-                'proof_of_sending' => 'required'
-            ]);
         }
-
+        $allFilesStore = implode(',', $allFiles);
+//        dd($allFiles,$allFilesStore);
         $salerequests = Salesrequest::find($id);
         $salerequests->status = 'Sales Proposal Status';
-        $salerequests->proof_of_sending = $fileName;
+        $salerequests->proof_of_sending = $allFilesStore;
 
 
         $salerequests->save();
@@ -780,6 +925,19 @@ class SalesrequestController extends Controller
         DB::table('request_logs')->insert(
             ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Releasing of Proposal', 'query' => $salerequests, 'date_time' => now()]
         );
+
+
+        //-----Email Notification-----
+        $emailToNotify = array_filter(DB::table('users')->where('role', 3)->where('active', 'yes')->pluck('email')->toArray());
+        $emailData = [
+            'subject' => 'Sales Released Proposal and Uploaded Proof of Sending',
+            'body' => 'Sales team has successfully released the proposal for the project and uploaded proof of sending.',
+            'title' => $salerequests->project_title,
+            'targetDate' => $salerequests->date_needed,
+            'status' => $salerequests->status,
+        ];
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+        //-----Email Notification----
 
         return redirect('/release_proposal_header')->with('success', 'Proof of proposal uploaded.');
     }
@@ -840,7 +998,8 @@ class SalesrequestController extends Controller
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
             ->get();
 
 
@@ -903,7 +1062,8 @@ class SalesrequestController extends Controller
             }
 
             $salerequests = Salesrequest::find($id);
-            $salerequests->status = 'Project Completion / Uploading of Documents';
+//            $salerequests->status = 'Project Completion / Uploading of Documents';
+            $salerequests->status = 'Upload CER';
             $salerequests->bid_summary_files = $fileName2;
             $salerequests->save();
 
@@ -915,8 +1075,22 @@ class SalesrequestController extends Controller
                 ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Bid Summary Upload', 'query' => $salerequests, 'date_time' => now()]
             );
 
+            //-----Email Notification-----
+            $emailToNotify = array_filter(DB::table('users')->where('role', 3)->where('active', 'yes')->pluck('email')->toArray());
+            $emailData = [
+                'subject' => 'Bid Summary Uploaded',
+                'body' => 'Revenue team has uploaded the bid summary for the project.',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+            ];
+            Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+            //-----Email Notification----
+
+
             return redirect('/bid_summary_header')->with('success', 'Transaction Success.');
         } else {
+
             $request->validate([
                 'remarks' => 'required',
             ]);
@@ -932,8 +1106,250 @@ class SalesrequestController extends Controller
                 ['user_id' => Auth::user()->id, 'form' => 'Bid Summary Upload', 'query' => $salerequests, 'created_at' => now()]
             );
 
-            return redirect('/po_ntp_header')->with('success', 'Transaction Success.');
+            //-----Email Notification-----
+            $emailToNotify = array_filter(DB::table('users')->where('role', 8)->where('active', 'yes')->pluck('email')->toArray());
+            $emailData = [
+                'subject' => 'Revenue Disapproved PO / NTP',
+                'body' => 'Purchase Order (PO) and Notice to Proceed (NTP) documents uploaded for the project have been disapproved by the Revenue team.
+                Log in to the system, review the feedback provided by the Revenue team, and take the necessary actions to rectify the identified issues.',
+                'title' => $salerequests->project_title,
+                'targetDate' => $salerequests->date_needed,
+                'status' => $salerequests->status,
+            ];
+            Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+            //-----Email Notification----
+
+            return redirect('bid_summary_header')->with('success', 'Review Success.');
         }
+    }
+
+    public function upload_cer_header()
+    {
+        $salesrequests = DB::table('salesrequests')
+            ->where('salesrequests.status', 'like', '%Upload CER%')
+            ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
+            ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
+            ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
+            ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
+            ->get();
+
+
+        return view('salesrequests.upload_cer_header', compact(['salesrequests']));
+    }
+
+    public function upload_cer_details($id)
+    {
+        $salesrequests = DB::table('salesrequests')
+            ->where('salesrequests.sales_request_id', '=', $id)
+            ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
+            ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
+            ->leftJoin('mark_ups', 'salesrequests.sales_request_id', '=', 'mark_ups.sales_request_id')
+            ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
+            ->select('salesrequests.*', 'projects.project_code', 'users.username', 'biddings.bid_file', 'mark_ups.mark_up_file')
+            ->get();
+//        dd($salesrequests);
+
+        $result = DB::table('biddings')->select('bidding_id')->where('sales_request_id', $id)->first();
+        $id2 = $result->bidding_id;
+
+        $biddingdetails = DB::table('biddingdetails')
+            ->where('bidding_id', '=', $id2)
+            ->where('bid_status', '=', '1')
+            ->select('biddingdetails.*')
+            ->get();
+
+        $mark_ups = DB::table('mark_ups')
+            ->where('sales_request_id', '=', $id)
+            ->select('mark_ups.*')
+            ->get();
+//            dd($salesrequests,$biddingdetails,$mark_ups);
+
+        return view('salesrequests.upload_cer_details', compact('salesrequests'))->with('biddingdetails', $biddingdetails)->with('mark_ups', $mark_ups);
+    }
+
+    public function uploaded_cer(Request $request, $id)
+    {
+//        $request->validate([
+//            'approved_status' => 'required'
+//        ]);
+
+//        if ($request->get('approved_status') == 'Yes') {
+
+        if ($request->hasfile('cer_files')) {
+            $fileName2 = request()->cer_files->getClientOriginalName();
+            $unique_id = uniqid();
+            $fileName2 = $unique_id . '-' . $fileName2;
+            $request->cer_files->storeAs('public/uploads', $fileName2);
+
+            if (!empty($request->cer_files_exist)) {
+                $file_path = public_path() . '/storage/uploads/' . $request->cer_files_exist;
+                unlink($file_path);
+            }
+        } else if (!empty($request->cer_files_exist)) {
+            $fileName2 = $request->get('cer_files_exist');
+        } else {
+            $request->validate([
+                'cer_files' => 'required'
+            ]);
+        }
+
+        $salerequests = Salesrequest::find($id);
+//            $salerequests->status = 'Project Completion / Uploading of Documents';
+        $salerequests->status = 'Release NTP PO to Winning Contractor';
+        $salerequests->cer_files = $fileName2;
+        $salerequests->save();
+
+        DB::table('logs')->insert(
+            ['user_id' => Auth::user()->id, 'form' => 'CER Upload', 'query' => $salerequests, 'created_at' => now()]
+        );
+
+        DB::table('request_logs')->insert(
+            ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'CER Upload', 'query' => $salerequests, 'date_time' => now()]
+        );
+
+        //-----Email Notification-----
+        $emailToNotify = array_filter(DB::table('users')->where('role', 4)->where('active', 'yes')->pluck('email')->toArray());
+        $emailData = [
+            'subject' => 'CER Uploaded',
+            'body' => 'Admin uploaded the CER for the project.',
+            'title' => $salerequests->project_title,
+            'targetDate' => $salerequests->date_needed,
+            'status' => $salerequests->status,
+        ];
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+        //-----Email Notification----
+
+
+        return redirect('/upload-cer-header')->with('success', 'Upload Success.');
+//        } else {
+//
+//            $request->validate([
+//                'remarks' => 'required',
+//            ]);
+//
+//            $salerequests = Salesrequest::find($id);
+//            $salerequests->status = 'Sales Proposal Status';
+//            $salerequests->save();
+//
+//            DB::table('request_logs')->insert(
+//                ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Revenue Disapproved PO / NTP', 'remarks' => $request->get('remarks'), 'query' => $salerequests, 'date_time' => now()]
+//            );
+//            DB::table('logs')->insert(
+//                ['user_id' => Auth::user()->id, 'form' => 'Bid Summary Upload', 'query' => $salerequests, 'created_at' => now()]
+//            );
+//
+//            //-----Email Notification-----
+//            $emailToNotify = array_filter(DB::table('users')->where('role', 8)->where('active', 'yes')->pluck('email')->toArray());
+//            $emailData = [
+//                'subject' => 'Revenue Disapproved PO / NTP',
+//                'body' => 'Purchase Order (PO) and Notice to Proceed (NTP) documents uploaded for the project have been disapproved by the Revenue team.
+//                Log in to the system, review the feedback provided by the Revenue team, and take the necessary actions to rectify the identified issues.',
+//                'title' => $salerequests->project_title,
+//                'targetDate' => $salerequests->date_needed,
+//                'status' => $salerequests->status,
+//            ];
+//            Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+        //-----Email Notification----
+
+        return redirect('bid_summary_header')->with('success', 'Review Success.');
+//        }
+    }
+
+    public function release_pontp_header()
+    {
+        $salesrequests = DB::table('salesrequests')
+            ->where('salesrequests.status', 'like', '%Release NTP PO%')
+            ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
+            ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
+            ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
+            ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
+            ->get();
+
+
+        return view('salesrequests.release_pontp_header', compact(['salesrequests']));
+    }
+
+    public function release_pontp_details($id)
+    {
+        $salesrequests = DB::table('salesrequests')
+            ->where('salesrequests.sales_request_id', '=', $id)
+            ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
+            ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
+            ->leftJoin('mark_ups', 'salesrequests.sales_request_id', '=', 'mark_ups.sales_request_id')
+            ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
+            ->select('salesrequests.*', 'projects.project_code', 'users.username', 'biddings.bid_file', 'mark_ups.mark_up_file')
+            ->get();
+//        dd($salesrequests);
+
+        $result = DB::table('biddings')->select('bidding_id')->where('sales_request_id', $id)->first();
+        $id2 = $result->bidding_id;
+
+        $biddingdetails = DB::table('biddingdetails')
+            ->where('bidding_id', '=', $id2)
+            ->where('bid_status', '=', '1')
+            ->select('biddingdetails.*')
+            ->get();
+
+        $mark_ups = DB::table('mark_ups')
+            ->where('sales_request_id', '=', $id)
+            ->select('mark_ups.*')
+            ->get();
+//            dd($salesrequests,$biddingdetails,$mark_ups);
+
+        return view('salesrequests.release_pontp_details', compact('salesrequests'))->with('biddingdetails', $biddingdetails)->with('mark_ups', $mark_ups);
+    }
+
+    public function released_pontp(Request $request, $id)
+    {
+//        if ($request->hasfile('cer_files')) {
+//            $fileName2 = request()->cer_files->getClientOriginalName();
+//            $unique_id = uniqid();
+//            $fileName2 = $unique_id . '-' . $fileName2;
+//            $request->cer_files->storeAs('public/uploads', $fileName2);
+//
+//            if (!empty($request->cer_files_exist)) {
+//                $file_path = public_path() . '/storage/uploads/' . $request->cer_files_exist;
+//                unlink($file_path);
+//            }
+//        } else if (!empty($request->cer_files_exist)) {
+//            $fileName2 = $request->get('cer_files_exist');
+//        } else {
+//            $request->validate([
+//                'cer_files' => 'required'
+//            ]);
+//        }
+
+        $salerequests = Salesrequest::find($id);
+        $salerequests->status = 'Project Completion / Uploading of Documents';
+//        $salerequests->status = 'Release NTP PO to Winning Contractor';
+//        $salerequests->cer_files = $fileName2;
+        $salerequests->save();
+
+        DB::table('logs')->insert(
+            ['user_id' => Auth::user()->id, 'form' => 'NTP PO Released to Contractor', 'query' => $salerequests, 'created_at' => now()]
+        );
+
+        DB::table('request_logs')->insert(
+            ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'NTP PO Released to Contractor', 'query' => $salerequests, 'date_time' => now()]
+        );
+
+        //-----Email Notification-----
+        $emailToNotify = array_filter(DB::table('users')/*->where('role', 4)*/ ->where('active', 'yes')->pluck('email')->toArray());
+        $emailData = [
+            'subject' => 'NTP PO Released to Contractor',
+            'body' => 'NTP PO Released to winning contractor.',
+            'title' => $salerequests->project_title,
+            'targetDate' => $salerequests->date_needed,
+            'status' => $salerequests->status,
+        ];
+        Mail::to($emailToNotify)->send(new EmailNotification($emailData));
+        //-----Email Notification----
+
+        return redirect('/release-pontp-header')->with('success', 'Success.');
     }
 
     public function cer_header()
@@ -944,7 +1360,8 @@ class SalesrequestController extends Controller
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
             ->get();
 
 
@@ -1038,13 +1455,16 @@ class SalesrequestController extends Controller
     {
         $salesrequests = DB::table('salesrequests')
             ->take(100)
-            ->where('status', '=', 'none')
+//            ->where('status', '=', 'none')
             ->orderBy('sales_request_id', 'desc')
             ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"))
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code',
+//                DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+
+                DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
             ->get();
 
         return view('salesrequests.viewprojectstatus', compact(['salesrequests']));
@@ -1072,12 +1492,13 @@ class SalesrequestController extends Controller
 
 
         $salesrequests = DB::table('salesrequests')
-            ->orderBy('sales_request_id', 'desc')
+            ->orderBy('salesrequests.created_at', 'desc')
             ->leftJoin('malls', 'salesrequests.mall_id', '=', 'malls.mall_id')
             ->leftJoin('projects', 'salesrequests.sales_request_id', '=', 'projects.sales_request_id')
             ->leftJoin('biddings', 'salesrequests.sales_request_id', '=', 'biddings.sales_request_id')
             ->leftJoin('users', 'salesrequests.pm_assigned_id', '=', 'users.id')
-            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(now(),salesrequests.created_at)AS project_age"));
+            ->select('salesrequests.*', 'users.username', 'projects.project_id', 'biddings.pm_remarks', 'malls.mall_name', 'projects.remarks', 'projects.project_code', DB::raw("DATEDIFF(CASE WHEN salesrequests.status = 'Project Completed' THEN salesrequests.updated_at ELSE NOW() END, salesrequests.created_at) AS project_age"))
+;
 
         if ($search_opt == 'mall_name') {
             $salesrequests = $salesrequests->where('malls.mall_name', 'like', '%' . $user_search . '%');
@@ -1175,7 +1596,7 @@ class SalesrequestController extends Controller
     public function uploadfiles(Request $request, $id)
     {
 
-        if (Auth::user()->role == '4') {
+        if (Auth::user()->role == '4' || Auth::user()->role == '5') {
             // contractor_ntp
             if ($request->hasfile('contractor_ntp')) {
                 $fileName = $request->contractor_ntp->getClientOriginalName();
@@ -1304,7 +1725,7 @@ class SalesrequestController extends Controller
         }
 
         $salerequests = Salesrequest::find($id);
-        if (Auth::user()->role == '4') {
+        if (Auth::user()->role == '4' || Auth::user()->role == '5') {
             $salerequests->contractor_ntp = $fileName;
             $salerequests->contractor_po = $fileName3;
             $salerequests->cari = $fileName4;
@@ -1320,11 +1741,11 @@ class SalesrequestController extends Controller
         $salerequests->save();
 
         DB::table('logs')->insert(
-            ['user_id' => Auth::user()->id, 'form' => 'Uploaded Documents', 'query' => $salerequests, 'created_at' => now()]
+            ['user_id' => Auth::user()->id, 'form' => 'Uploaded Documents', 'query' => '$salerequests', 'created_at' => now()]
         );
 
         DB::table('request_logs')->insert(
-            ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Uploaded Documents', 'query' => $salerequests, 'date_time' => now()]
+            ['user_id' => Auth::user()->id, 'sales_request_id' => $id, 'action' => 'Uploaded Documents', 'query' => '$salerequests', 'date_time' => now()]
         );
 
         return redirect('/viewdocs')->with('success', 'Successfully Updated Documents');
@@ -1348,18 +1769,21 @@ class SalesrequestController extends Controller
                 ->get();
 
             $view_return1 = "<table class='table table-hover'>
-    <thead> <tr>
-    <th>Bill of Material</th></tr> </thead>
+    <thead>
+        <tr>
+            <th>Bill of Material</th>
+        </tr>
+    </thead>
     <tbody>";
             $view_return2 = '';
             foreach ($boms as $bom) {
                 $bom_file = $bom->bom_file;
-
-                $view_return2 = $view_return2 . "<tr><td><a href='/storage/uploads/$bom_file' download><b>$bom_file </a> </td></tr>";
+                $view_return2 .= "<tr>
+        <td><a href='/storage/uploads/$bom_file' download><b>$bom_file</b></a></td>
+    </tr>";
             }
-
             $view_return3 = "</tbody>
-        </table>";
+</table>";
 
             $slds = DB::table('slds')
                 ->select('sld_file')
@@ -1367,18 +1791,22 @@ class SalesrequestController extends Controller
                 ->get();
 
             $view_return4 = "<table class='table table-hover'>
-        <thead> <tr>
-        <th>SLD</th></tr> </thead>
-        <tbody>";
+    <thead>
+        <tr>
+            <th>SLD</th>
+        </tr>
+    </thead>
+    <tbody>";
             $view_return5 = '';
             foreach ($slds as $sld) {
                 $sld_file = $sld->sld_file;
-
-                $view_return5 = $view_return5 . "<tr><td><a href='/storage/uploads/$sld_file' download><b>$sld_file</a>  </td></tr>";
+                $view_return5 .= "<tr>
+        <td><a href='/storage/uploads/$sld_file' download><b>$sld_file</b></a></td>
+    </tr>";
             }
-
             $view_return6 = "</tbody>
-            </table>";
+</table>";
+
 
             $layouts = DB::table('layouts')
                 ->select('layout_file')
@@ -1428,25 +1856,20 @@ class SalesrequestController extends Controller
         return view('viewprojectpdf');
     }
 
-
     public function addMore()
     {
         return view("addMore");
     }
 
-
     public function addMorePost(Request $request)
     {
         $rules = [];
-
 
         foreach ($request->input('name') as $key => $value) {
             $rules["name.$key}"] = 'required';
         }
 
-
         $validator = Validator::make($request->all(), $rules);
-
 
         if ($validator->passes()) {
 
@@ -1455,10 +1878,8 @@ class SalesrequestController extends Controller
                 TagList::create(['name' => $value]);
             }
 
-
             return response()->json(['success' => 'done']);
         }
-
 
         return response()->json(['error' => $validator->errors()->all()]);
     }

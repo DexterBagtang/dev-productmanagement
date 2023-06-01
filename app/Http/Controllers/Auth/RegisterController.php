@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\User;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
-use Auth;
 use DB;
 use Carbon\Carbon;
+
 class RegisterController extends Controller
 {
     /*
@@ -49,26 +50,34 @@ class RegisterController extends Controller
     public function register(Request $request)
     {
 
-      $this->validator($request->all())->validate();
+        $this->validator($request->all())->validate();
 
 //        dd($request->all());
 
         $this->create($request->all());
 
-    return redirect('/viewusers')->with('success', 'Success');
+        return redirect('/viewusers')->with('success', 'Success');
     }
 
     /**
      * Get a validator for an incoming registration request.
      *
-     * @param  array  $data
+     * @param array $data
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(array $data)
     {
         return Validator::make($data, [
             'username' => ['required', 'string', 'max:255', 'unique:users'],
-            'email' => ['required','email'],
+//            'email' => ['required', 'email'],
+            'email' => ['required', 'email', function ($attribute, $value, $fail) {
+                $allowedDomain = 'philcom.com';
+                $domain = substr(strrchr($value, "@"), 1);
+
+                if ($domain !== $allowedDomain) {
+                    $fail('Only email addresses with the domain @philcom.com are allowed.');
+                }
+            }],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'role' => ['required', 'string', 'max:255'],
             'active' => ['required'],
@@ -78,7 +87,7 @@ class RegisterController extends Controller
     /**
      * Create a new user instance after a valid registration.
      *
-     * @param  array  $data
+     * @param array $data
      * @return \App\User
      */
     protected function create(array $data)
@@ -95,45 +104,77 @@ class RegisterController extends Controller
 
     public function viewusers()
     {
-      $users = DB::table('users')
-              ->leftJoin('role', 'users.role', '=', 'role.role')
-              ->select('users.*','role.role_name')
-              ->get();
+        if (Auth::user()->role == '3'){
+            $users = DB::table('users')
+                ->leftJoin('role', 'users.role', '=', 'role.role')
+                ->select('users.*', 'role.role_name')
+                ->where('users.role',2)
+                ->orWhere('users.role',3)
+                ->get();
+        }elseif(Auth::user()->role == '8'){
+            $users = DB::table('users')
+                ->leftJoin('role', 'users.role', '=', 'role.role')
+                ->select('users.*', 'role.role_name')
+                ->where('users.role',8)
+                ->get();
+        }
+        elseif(Auth::user()->role == '6'){
+            $users = DB::table('users')
+                ->leftJoin('role', 'users.role', '=', 'role.role')
+                ->select('users.*', 'role.role_name')
+                ->where('users.role',5)
+                ->orWhere('users.role',6)
+                ->get();
+        }
+        else{
+            $users = DB::table('users')
+                ->leftJoin('role', 'users.role', '=', 'role.role')
+                ->select('users.*', 'role.role_name')
+                ->get();
+        }
 
-      return view('auth.viewusers', compact('users'));
+        return view('auth.viewusers', compact('users'));
     }
 
     public function users_edit_view($id)
     {
-      $users = DB::table('users')
-              ->where('users.id', '=', $id)
-              ->leftJoin('role', 'users.role', '=', 'role.role')
-              ->select('users.*','role.role_name')
-              ->get();
+        $users = DB::table('users')
+            ->where('users.id', '=', $id)
+            ->leftJoin('role', 'users.role', '=', 'role.role')
+            ->select('users.*', 'role.role_name')
+            ->get();
 
-      return view('auth.editusers', compact('users'));
+        return view('auth.editusers', compact('users'));
     }
 
     public function users_update(Request $request, $id)
     {
-      $request->validate([
-        'username'=>'required',
-        'role'=> 'required'
-      ]);
+        $request->validate([
+            'username' => 'required',
+            'email' => ['required', 'email', function ($attribute, $value, $fail) {
+                $allowedDomain = 'philcom.com';
+                $domain = substr(strrchr($value, "@"), 1);
+
+                if ($domain !== $allowedDomain) {
+                    $fail('Only email addresses with the domain @philcom.com are allowed.');
+                }
+            }],
+            'role' => 'required'
+        ]);
 //      dd($request);
 
 
-      $user = User::find($id);
-      $user->username = $request->get('username');
-      $user->email= $request->get('email');
-      $user->role = $request->get('role');
-      $user->active = $request->get('active');
-      $user->save();
+        $user = User::find($id);
+        $user->username = $request->get('username');
+        $user->email = $request->get('email');
+        $user->role = $request->get('role');
+        $user->active = $request->get('active');
+        $user->save();
 
-      DB::table('logs')->insert(
-    ['user_id' => Auth::user()->id,'form' => 'Update Users','query' => $user,'created_at'=>now()]
-);
-      return redirect('/viewusers')->with('success', 'User has been updated');
+        DB::table('logs')->insert(
+            ['user_id' => Auth::user()->id, 'form' => 'Update Users', 'query' => $user, 'created_at' => now()]
+        );
+        return redirect('/viewusers')->with('success', 'User has been updated');
     }
 
 

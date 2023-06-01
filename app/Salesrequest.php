@@ -15,13 +15,9 @@ class Salesrequest extends Model
     'on_site_survey',
     'comment',
     'project_requirements_files',
-    'project_requirements_files_2',
-    'project_requirements_files_3',
-    'project_requirements_files_4',
     'project_title',
     'category',
-    'status',
-    'reason_for_revision',
+    'status'
   ];
 
   protected $primaryKey = 'sales_request_id';

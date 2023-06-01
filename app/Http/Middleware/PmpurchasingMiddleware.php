@@ -15,7 +15,7 @@ class PmpurchasingMiddleware
      */
     public function handle($request, Closure $next)
     {
-      if ($request->user() && $request->user()->role != '4' && $request->user()->role != '2' && $request->user()->role != '1')
+      if ($request->user() && $request->user()->role != '4' && $request->user()->role != '1' && $request->user()->role != '8' && $request->user()->role != '5')
       {
         auth()->logout();
         return redirect('/login')->withErrors(['You tried to access a module without sufficient privileges.']);

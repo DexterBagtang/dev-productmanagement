@@ -1,160 +1,176 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <!-- Meta, title, CSS, favicons, etc. -->
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+@extends('layout.app')
+@section('link')
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+@endsection
+@section('content')
+    <div class="py-4 px-2">
+        <div class="d-flex justify-content-between w-100 flex-wrap">
+            <div class="mb-3 mb-lg-0">
+                <h1 class="h4">Malls</h1>
+              <!-- Button trigger modal -->
+              <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createMall">
+                Add New Mall
+              </button>
 
-    <title>Philcom</title>
-	<link rel="icon" href="images/philcom_logo.png" type="image/ico" />
-    <!-- Bootstrap -->
-    <link href="vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
-    <!-- NProgress -->
-    <link href="vendors/nprogress/nprogress.css" rel="stylesheet">
-    <!-- iCheck -->
-    <link href="vendors/iCheck/skins/flat/green.css" rel="stylesheet">
-    <!-- Datatables -->
-    <link href="vendors/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet">
-    <link href="vendors/datatables.net-buttons-bs/css/buttons.bootstrap.min.css" rel="stylesheet">
-    <link href="vendors/datatables.net-fixedheader-bs/css/fixedHeader.bootstrap.min.css" rel="stylesheet">
-    <link href="vendors/datatables.net-responsive-bs/css/responsive.bootstrap.min.css" rel="stylesheet">
-    <link href="vendors/datatables.net-scroller-bs/css/scroller.bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <!-- Custom Theme Style -->
-    <link href="build/css/custom.min.css" rel="stylesheet">
-
-  </head>
-
-  <body class="nav-md">
-    <div class="container body">
-      <div class="main_container">
-        <div class="col-md-3 left_col">
-          <div class="left_col scroll-view">
-            <div class="navbar nav_title" style="border: 0;">
-              <a href="/home" class="site_title"> <img src="img/company_logo.png" width = '70%' height = '80%'></a>
-
-            </div>
-
-
-            <!-- sidebar menu -->
-            @include('side_menu')
-            <!-- /sidebar menu -->
-
-
-          </div>
-        </div>
-
-        <!-- top navigation -->
-        <div class="top_nav">
-          <div class="nav_menu">
-		      @include('top_header')
-          </div>
-        </div>
-        <!-- /top navigation -->
-
-        <!-- page content -->
-        <div class="right_col" role="main">
-
-            <div class="page-title">
-              <div class="title_left">
-                <h3>View Malls</h3>
-              </div>
-
-            </div>
-
-            <div class="clearfix"></div>
-
-            <div class="row">
-              <div class="col-md-12 col-sm-12 col-xs-12">
-                <div class="x_panel">
-                  <div class="x_title">
-
-                    <ul class="nav navbar-right panel_toolbox">
-                      <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
-                      </li>
-                      <li><a class="close-link"><i class="fa fa-close"></i></a>
-                      </li>
-                    </ul>
-
-					<a href="{{ route('create_malls')}}"><input type="submit" name="btn_add" value="ADD NEW RECORD" class="btn btn-round btn-primary"></a>
-                    <div class="clearfix"></div>
-                  </div>
-                  <div class="x_content">
-                    @if(session()->get('success'))
-                      <div class="alert alert-success">
-                        {{ session()->get('success') }}
-                      </div><br />
-                    @endif
-                    <table id="datatable-responsive" class="table table-striped table-bordered dt-responsive " cellspacing="0" width="100%">
-                      <thead>
-                          <tr>
-                            <td>Region</td>
-                            <td>Mall Name</td>
-                            <td>Mall Code</td>
-                            <td>Action</td>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          @foreach($malls as $mall)
-                          <tr>
-                              <td>{{$mall->region}}</td>
-                              <td>{{$mall->mall_name}}</td>
-                              <td>{{$mall->mall_code}}</td>
-                              <td><a href="{{ action('MallController@edit',$mall->mall_id)}}" class="btn btn-primary">Edit</a></td>
-                          </tr>
-                          @endforeach
-                      </tbody>
-                    </table>
-
-
-                  </div>
+                <!-- Modal -->
+                <div class="modal fade" id="createMall" tabindex="-1" aria-labelledby="exampleModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="{{ route('malls.store') }}" method="post" enctype="multipart/form-data">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel">Add New Mall</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    @csrf
+                                    <div class="mb-2 row">
+                                        <label for="" class="col-sm-3 col-form-label">Region</label>
+                                        <div class="col-sm-9">
+                                            <input type="text" class="form-control" name="region"
+                                                   value="{{old('region')}}"
+                                                   required autofocus>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2 row">
+                                        <label for="inputPassword" class="col-sm-3 col-form-label">Mall Name</label>
+                                        <div class="col-sm-9">
+                                            <input type="text" class="form-control" id="inputPassword" name="mall_name"
+                                                   value="{{old('mall_name')}}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2 row">
+                                        <label for="inputPassword" class="col-sm-3 col-form-label">Mall Code</label>
+                                        <div class="col-sm-9">
+                                            <input type="text" class="form-control" id="inputPassword" name="mall_code"
+                                                   value="{{old('mall_code')}}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2 row">
+                                        <label for="inputPassword" class="col-sm-3 col-form-label">Mall Logo</label>
+                                        <div class="col-sm-9">
+                                            <input type="file" class="form-control" id="inputPassword" name="mall_logo">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close
+                                    </button>
+                                    <button class="btn btn-primary" type="submit">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-              </div>
             </div>
-
         </div>
-
-
-        <!-- /page content -->
-
-
-      </div>
     </div>
 
-    <!-- jQuery -->
-    <script src="vendors/jquery/dist/jquery.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="vendors/bootstrap/dist/js/bootstrap.min.js"></script>
-    <!-- FastClick -->
-    <script src="vendors/fastclick/lib/fastclick.js"></script>
-    <!-- NProgress -->
-    <script src="vendors/nprogress/nprogress.js"></script>
-    <!-- iCheck -->
-    <script src="vendors/iCheck/icheck.min.js"></script>
-    <!-- Datatables -->
-    <script src="vendors/datatables.net/js/jquery.dataTables.min.js"></script>
+    @if(session()->get('success'))
+      <div class="alert alert-success">
+        {{ session()->get('success') }}
+      </div><br />
+    @endif
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow components-section">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="example" class="table table-centered">
+                            <thead class="thead-light">
+                            <tr>
+                                <th>Region</th>
+                                <th>Mall Name</th>
+                                <th>Mall Code</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach($malls as $mall)
+                                <tr>
+                                    <td>{{$mall->region}}</td>
+                                    <td>{{$mall->mall_name}}</td>
+                                    <td>{{$mall->mall_code}}</td>
+                                    <td>
+{{--                                      <a href="{{ action('MallController@edit',$mall->mall_id)}}"--}}
+{{--                                           class="btn btn-sm btn-primary m-0">Edit</a>--}}
+                                      <button type="button" class="btn btn-xs btn-primary m-0" data-bs-toggle="modal" data-bs-target="#editMall{{$mall->mall_id}}">
+                                        Edit Mall
+                                      </button>
 
-    <script src="vendors/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
-    <script src="vendors/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
-    <script src="vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
-    <script src="vendors/datatables.net-buttons/js/buttons.flash.min.js"></script>
-    <script src="vendors/datatables.net-buttons/js/buttons.html5.min.js"></script>
-    <script src="vendors/datatables.net-buttons/js/buttons.print.min.js"></script>
-    <script src="vendors/datatables.net-fixedheader/js/dataTables.fixedHeader.min.js"></script>
-    <script src="vendors/datatables.net-keytable/js/dataTables.keyTable.min.js"></script>
-    <script src="vendors/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
-    <script src="vendors/datatables.net-responsive-bs/js/responsive.bootstrap.js"></script>
-    <script src="vendors/datatables.net-scroller/js/dataTables.scroller.min.js"></script>
-    <script src="vendors/jszip/dist/jszip.min.js"></script>
-    <script src="vendors/pdfmake/build/pdfmake.min.js"></script>
-    <script src="vendors/pdfmake/build/vfs_fonts.js"></script>
+                                      <!-- Edit Modal -->
+                                      <div class="modal fade" id="editMall{{$mall->mall_id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                          <div class="modal-content">
+                                            <div class="modal-header">
+                                              <h5 class="modal-title" id="exampleModalLabel">Edit Mall</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form action="{{ route('malls.update', $mall->mall_id) }}" method="post" enctype="multipart/form-data">
+                                              <div class="modal-body">
+                                                @method('PATCH')
+                                                @csrf
+                                                <div class="mb-2 row">
+                                                  <label for="" class="col-sm-3 col-form-label">Region</label>
+                                                  <div class="col-sm-9">
+                                                    <input type="text" class="form-control" name="region" value="{{ $mall->region }}">
+                                                  </div>
+                                                </div>
+                                                <div class="mb-2 row">
+                                                  <label for="inputPassword" class="col-sm-3 col-form-label">Mall Name</label>
+                                                  <div class="col-sm-9">
+                                                    <input type="text" class="form-control" id="inputPassword" name="mall_name" value="{{ $mall->mall_name }}">
+                                                  </div>
+                                                </div>
+                                                <div class="mb-2 row">
+                                                  <label for="inputPassword" class="col-sm-3 col-form-label">Mall Code</label>
+                                                  <div class="col-sm-9">
+                                                    <input type="text" class="form-control" id="inputPassword" name="mall_code" value="{{ $mall->mall_code }}">
+                                                  </div>
+                                                </div>
+                                                <div class="mb-2 row">
+                                                  <label for="inputPassword" class="col-sm-3 col-form-label">Mall Logo</label>
+                                                  <div class="col-sm-9">
+                                                    <input type="file" class="form-control" id="inputPassword" name="mall_logo">
+                                                    @if($mall->mall_logo != "")
+                                                      <img src="/storage/uploads/{{ $mall->mall_logo }}" class="img-fluid mt-2"/>
+                                                    @endif
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button class="btn btn-primary mx-2" type="submit">Submit</button>
+                                              </div>
+                                            </form>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+@section('script')
+  <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#example').DataTable({
+        aaSorting:[],
+        pageLength: -1,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
 
-    <!-- Custom Theme Scripts -->
-    <script src="build/js/custom.min.js"></script>
-
-  </body>
-</html>
+        // stateSave:true,
+      });
+    });
+  </script>
+@endsection

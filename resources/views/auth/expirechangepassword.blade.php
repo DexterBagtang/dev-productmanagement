@@ -1,173 +1,176 @@
+<!--
+
+=========================================================
+* Volt Pro - Premium Bootstrap 5 Dashboard
+=========================================================
+
+* Product Page: https://themesberg.com/product/admin-dashboard/volt-bootstrap-5-dashboard
+* Copyright 2021 Themesberg (https://www.themesberg.com)
+* License (https://themesberg.com/licensing)
+
+* Designed and coded by https://themesberg.com
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. Please contact us to request a removal.
+
+-->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <!-- Meta, title, CSS, favicons, etc. -->
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" href="images/favicon.ico" type="image/ico" />
 
-    <title>Project Management </title>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-    <!-- Bootstrap -->
-    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
-    <!-- NProgress -->
-    <link href="../vendors/nprogress/nprogress.css" rel="stylesheet">
-    <!-- iCheck -->
-    <link href="../vendors/iCheck/skins/flat/green.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="img/pm.logo.png">
 
-    <!-- bootstrap-progressbar -->
-    <link href="../vendors/bootstrap-progressbar/css/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet">
-    <!-- JQVMap -->
-    <link href="../vendors/jqvmap/dist/jqvmap.min.css" rel="stylesheet"/>
-    <!-- bootstrap-daterangepicker -->
-    <link href="../vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
+    <!-- Sweet Alert -->
+    <link type="text/css" href="../../volt/vendor/sweetalert2/dist/sweetalert2.min.css" rel="stylesheet">
 
-    <!-- Custom Theme Style -->
-    <link href="../build/css/custom.min.css" rel="stylesheet">
+    <!-- Notyf -->
+    <link type="text/css" href="../../volt/vendor/notyf/notyf.min.css" rel="stylesheet">
 
-    <!-- ICON -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  </head>
-
-  <body >
-    <div class="container body">
-      <div class="main_container">
+    <!-- Volt CSS -->
+    <link type="text/css" href="../../volt/css/volt.css" rel="stylesheet">
 
 
-        <!-- top navigation -->
-        <div class="top_nav">
+    <!-- NOTICE: You can use the _analytics.html partial to include production code specific code & trackers -->
+    @yield('link')
+    <style>
+        html {
+            font-size: 13px;
+        }
+    </style>
 
+</head>
+
+
+<body>
+
+<!-- NOTICE: You can use the _analytics.html partial to include production code specific code & trackers -->
+
+
+<nav class="navbar navbar-dark navbar-theme-primary px-4 col-12 d-lg-none">
+    <a class="navbar-brand me-lg-5" href="../../volt/index.html">
+        <img class="navbar-brand-dark" src="../../volt/assets/img/brand/light.svg" alt="Volt logo"/> <img
+                class="navbar-brand-light" src="../../volt/assets/img/brand/dark.svg" alt="Volt logo"/>
+    </a>
+    <div class="d-flex align-items-center">
+        <button class="navbar-toggler d-lg-none collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
+                aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</nav>
+
+
+<main class="content">
+
+
+    <div class="py-4">
+        <div class="d-flex justify-content-between w-100 flex-wrap">
+            <div class="mb-3 mb-lg-0">
+                <h1 class="h4">Change Password</h1>
+                {{--                <p class="mb-0">Dozens of reusable components built to provide buttons, alerts, popovers, and more.</p>--}}
+            </div>
         </div>
-        <!-- /top navigation -->
-        <!-- page content -->
-        <div class="right_col" role="main">
-                     <div class="row">
-              <div class="col-md-12 col-sm-12 col-xs-12">
-                <div class="x_panel">
-                  <div class="x_title">
-                    <h2>Change Passwords</h2>
-                    <ul class="nav navbar-right panel_toolbox">
-                      <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
-                      </li>
-                      <li><a class="close-link"><i class="fa fa-close"></i></a>
-                      </li>
-                    </ul>
-                    <div class="clearfix"></div>
-                  </div>
-                  <div class="x_content">
-                    <br />
-                    <div class="container">
-                      <div class="card uper">
+    </div>
 
-                    <div class="card-body">
+    <div class="row">
+        <div class="col-6 mb-4">
+            <div class="card border-0 shadow components-section">
+
+                <div class="card-body">
                     @if ($errors->any())
-                    <div class="alert alert-danger">
-                      <ul>
-                          @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                          @endforeach
-                      </ul>
-                    </div><br />
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div><br>
                     @endif
+                    @if (session('error'))
+                        <div class="alert alert-danger">
+                            {{ session('error') }}
+                        </div><br>
+                    @endif
+                    @if (session('success'))
+                        <div class="alert alert-success">
+                            {{ session('success') }}
+                        </div><br>
+                    @endif
+                    <form class="" method="POST" action="{{ action('HomeController@user_expirechangePassword')}}">
+                        {{ csrf_field() }}
 
-                        <div class="container">
-                            <div class="row justify-content-center">
-                                <div class="col-md-8">
-                                    <div class="card">
+                        <div class="my-1{{ $errors->has('current-password') ? ' has-error' : '' }}">
+                            <label for="new-password" class="col-md-4 control-label">Current Password</label>
 
+                            <div class="col">
+                                <input id="current-password" type="password" class="form-control"
+                                       name="current-password" required>
 
-                                        <div class="card-body">
-                                            @if (session('error'))
-                                                <div class="alert alert-danger">
-                                                    {{ session('error') }}
-                                                </div>
-                                            @endif
-                                            @if (session('success'))
-                                                <div class="alert alert-success">
-                                                    {{ session('success') }}
-                                                </div>
-                                            @endif
-                                            <form class="form-horizontal" method="POST" action="{{ action('HomeController@user_expirechangePassword')}}">
-                                                {{ csrf_field() }}
-
-                                                <div class="form-group{{ $errors->has('current-password') ? ' has-error' : '' }}">
-                                                    <label for="new-password" class="col-md-4 control-label">Current Password</label>
-
-                                                    <div class="col-md-6">
-                                                        <input id="current-password" type="password" class="form-control" name="current-password" >
-
-                                                        @if ($errors->has('current-password'))
-                                                            <span class="help-block">
+                                @if ($errors->has('current-password'))
+                                    <span class="text-danger small">
                                                             <strong>{{ $errors->first('current-password') }}</strong>
                                                         </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-group{{ $errors->has('new-password') ? ' has-error' : '' }}">
-                                                    <label for="new-password" class="col-md-4 control-label">New Password</label>
-
-                                                    <div class="col-md-6">
-                                                        <input id="new-password" type="password" class="form-control" name="new-password" >
-
-                                                        @if ($errors->has('new-password'))
-                                                            <span class="help-block">
-                                                            <strong>{{ $errors->first('new-password') }}</strong>
-                                                        </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label for="new-password-confirm" class="col-md-4 control-label">Confirm New Password</label>
-
-                                                    <div class="col-md-6">
-                                                        <input id="new-password-confirm" type="password" class="form-control" name="new-password_confirmation" >
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <div class="col-md-6 col-md-offset-4">
-                                                        <button type="submit" class="btn btn-primary">
-                                                            Change Password
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
+                                @endif
                             </div>
                         </div>
 
+                        <div class="my-1{{ $errors->has('new-password') ? ' has-error' : '' }}">
+                            <label for="new-password" class="col-md-4 control-label">New Password</label>
 
+                            <div class="col">
+                                <input id="new-password" type="password" class="form-control" name="new-password"
+                                       required>
 
-                    </div>
-                    </div>
-                    </div>
-                  </div>
+                                @if ($errors->has('new-password'))
+                                    <span class="text-danger small">
+                                                            <strong>{{ $errors->first('new-password') }}</strong>
+                                                        </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="my-1">
+                            <label for="new-password-confirm" class="col-md-4 control-label">Confirm New
+                                Password</label>
+
+                            <div class="col">
+                                <input id="new-password-confirm" type="password" class="form-control"
+                                       name="new-password_confirmation" required>
+                            </div>
+                        </div>
+
+                        <div class="my-1">
+                            <div class="col col-md-offset-4">
+                                <button type="submit" class="btn btn-primary">
+                                    Change Password
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-              </div>
             </div>
         </div>
-        <!-- /page content -->
-
-      </div>
     </div>
+</main>
 
-    <!-- jQuery -->
-    <script src="../vendors/jquery/dist/jquery.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
-    <!-- DateJS -->
-    <script src="../vendors/DateJS/build/date.js"></script>
+<!-- Core -->
+<script src="../../volt/vendor/@popperjs/core/dist/umd/popper.min.js"></script>
+<script src="../../volt/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
 
-    <!-- Custom Theme Scripts -->
-    <script src="../build/js/custom.min.js"></script>
+<!-- Vendor JS -->
+<script src="../../volt/vendor/onscreen/dist/on-screen.umd.min.js"></script>
 
-  </body>
+<!-- Slider -->
+{{--<script src="../../volt/vendor/nouislider/distribute/nouislider.min.js"></script>--}}
+
+<!-- Smooth scroll -->
+<script src="../../volt/vendor/smooth-scroll/dist/smooth-scroll.polyfills.min.js"></script>
+
+<!-- Volt JS -->
+<script src="../../volt/assets/js/volt.js"></script>
+</body>
 </html>

@@ -25,7 +25,7 @@
       <li class="">
         <a href="" class="user-profile dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
 	 <?php $user_last_login = Session::get('user_last_login'); ?>
-          Last Login : {{ Carbon\Carbon::parse($user_last_login)->format('d-F-Y H:i A') }}
+          Last Login : [{{ $user_last_login }}]
         </a>
       </li>
 

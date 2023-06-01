@@ -65,17 +65,14 @@
             </div><br />
           @endif
 
-<!--         <embed src="https://pm.philcom.com/img/PM.pdf" width="100%" height="700" type="application/pdf"> -->
-
-     <!--<embed src="{{action ('SalesrequestController@viewprojectpdf')}}" width="100%" height="700" type="application/pdf"> -->
-
-        <embed src="https://pm.philcom.com/storage/uploads/{{$salesrequest->project_requirements_files}}" width="100%" height="700" type="application/pdf">
+<!-- <embed src="https://pm.philcom.com/img/PM.pdf" width="100%" height="700" type="application/pdf"> -->
 
 
 
+ <embed src="https://pm.philcom.com/storage/uploads/{{ $salesrequest->project_requirements_files }}" width="100%" height="700" type="application/pdf"> 
 
-<!-- <a href='img/PM.pdf'>LINK</a>  -->
 
+<!-- <a href='img/PM.pdf'>LINK</a> -->
         </div>
         <!-- /page content -->
 

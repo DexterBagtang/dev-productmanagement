@@ -32,7 +32,7 @@ class NewSaleRequest extends Mailable
     {
         $actionMessage='A new sales request has been created; please review and approve it as soon as possible.';
         return $this
-            ->markdown('mail.sales')->with('project_title',$this->project_title)->with('actionMessage',$actionMessage);
+            ->markdown('mail.sales2')->with('project_title',$this->project_title)->with('actionMessage',$actionMessage);
 //            ->view('mail.sales');
     }
 }

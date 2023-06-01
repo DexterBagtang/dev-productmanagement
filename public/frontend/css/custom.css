@@ -1,0 +1,50 @@
+.dataTables_paginate {
+    margin-top: 1rem;
+}
+
+.pagination {
+    display: inline-block;
+    margin-left: 0;
+    border-radius: 0.25rem;
+}
+
+.pagination > li {
+    display: inline-block;
+}
+
+.pagination > li > a,
+.pagination > li > span {
+    position: relative;
+    float: left;
+    padding: 0.5rem 0.75rem;
+    margin-left: -1px;
+    line-height: 1.25;
+    color: #0d6efd;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+}
+
+.pagination > li > a:focus,
+.pagination > li > a:hover,
+.pagination > li > span:focus,
+.pagination > li > span:hover {
+    z-index: 2;
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.pagination > .active > a,
+.pagination > .active > span {
+    z-index: 3;
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+/*.dataTables_length select {*/
+/*    background-image: none;*/
+/*}*/
+
+
+
+

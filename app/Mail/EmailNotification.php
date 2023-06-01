@@ -10,15 +10,16 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class EmailNotification extends Mailable
 {
     use Queueable, SerializesModels;
+    public $emailData;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($emailData)
     {
-        //
+        $this->emailData = $emailData;
     }
 
     /**
@@ -28,6 +29,11 @@ class EmailNotification extends Mailable
      */
     public function build()
     {
-        return $this->view('view.name');
+        return $this->markdown('emailNotification')
+            ->bcc('Dexter.Bagtang@philcom.com')
+            ->with('data',$this->emailData)
+            ->subject($this->emailData['subject']);
+
+
     }
 }

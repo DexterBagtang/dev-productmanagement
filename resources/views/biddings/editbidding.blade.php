@@ -1,368 +1,453 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <!-- Meta, title, CSS, favicons, etc. -->
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" href="images/favicon.ico" type="image/ico" />
-
-    <title>Project Management </title>
-
-    <!-- Bootstrap -->
-    <link href="../../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="../../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
-    <!-- NProgress -->
-    <link href="../../vendors/nprogress/nprogress.css" rel="stylesheet">
-    <!-- iCheck -->
-    <link href="../../vendors/iCheck/skins/flat/green.css" rel="stylesheet">
-
-    <script src="../../js/jquery.min.js"></script>
-    <script src="../../js/jquery.inputmask.bundle.min.js"></script>
-    <!-- bootstrap-progressbar -->
-    <link href="../../vendors/bootstrap-progressbar/css/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet">
-    <!-- JQVMap -->
-    <link href="../../vendors/jqvmap/dist/jqvmap.min.css" rel="stylesheet"/>
-    <!-- bootstrap-daterangepicker -->
-    <link href="../../vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
-
-    <!-- Custom Theme Style -->
-    <link href="../../build/css/custom.min.css" rel="stylesheet">
-    <link href="../../build/css/clickable.css" rel="stylesheet">
-
-    <!-- ICON -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-
-    <script type="text/javascript">
-
-$(function() {
-    $("input[id^='currency']").inputmask({
-        alias : "currency", prefix: ''
-    });
-});
-
-  var i=30;
-
-  function addMorebid() {
-    i++;
-  $('#bidders').append('<tr id="rowb'+i+'"><td><input type="text" class="form-control" name="bid_trade[]"/></td><td><input type="text" class="form-control" name="contractor_name[]"/></td><td><input type="text" id="currency'+i+'"  class="form-control" name="total_cost[]"/></td><td><button type="button" name="remove" id="'+i+'" class="btn btn-danger btn_remove_bid" ">X</button></td></tr> ');
-
-  $("input[id^='currency']").inputmask({
-      alias : "currency", prefix: ''
-  });
-  }
-
-  $(document).ready(function(){
-    $(document).on('click', '.btn_remove_bid', function(){
-         var button_id = $(this).attr("id");
-         $('#rowb'+button_id+'').remove();
-    });
-    });
-
-
-
-  </script>
-    <style>
-.approvebox {
-  width: auto;
-  border: 5px solid gray;
-
-  border-radius: 5px;
-  font-size: 20px
-}
-
-</style>
-  </head>
-
-  <body class="nav-md">
-    <div class="container body">
-      <div class="main_container">
-        <div class="col-md-3 left_col">
-          <div class="left_col scroll-view">
-            <div class="navbar nav_title" style="border: 0;">
-              <a href="/home" class="site_title"> <img src="../../img/company_logo.png" width = '70%' height = '80%'></a>
-
+@extends('layout.app')
+@section('link')
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.6.0/dt-1.13.4/r-2.4.1/datatables.min.css" rel="stylesheet"/>
+    <script src="https://cdn.datatables.net/v/bs5/jq-3.6.0/dt-1.13.4/r-2.4.1/datatables.min.js"></script>
+@endsection
+@section('content')
+    <div class="py-4">
+        <div class="d-flex justify-content-between w-100 flex-wrap">
+            <div class="mb-3 mb-lg-0">
+                <h1 class="h4">Upload Bidders</h1>
+{{--                <p class="mb-0">Dozens of reusable components built to provide buttons, alerts, popovers, and more.</p>--}}
             </div>
-            <br />
-            <!-- sidebar menu -->
-
-              @include('side_menu')
-
-            <!-- /sidebar menu -->
-          </div>
         </div>
+    </div>
 
-        <!-- top navigation -->
-        <div class="top_nav">
-          @include('top_header')
-        </div>
-        <!-- /top navigation -->
-        <!-- page content -->
-        <div class="right_col" role="main">
-                     <div class="row">
-              <div class="col-md-12 col-sm-12 col-xs-12">
-                <div class="x_panel">
-                  <div class="x_title">
-                    <h2>Upload Bidders</h2>
-                    <ul class="nav navbar-right panel_toolbox">
-                      <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
-                      </li>
-                      <li><a class="close-link"><i class="fa fa-close"></i></a>
-                      </li>
-                    </ul>
-                    <div class="clearfix"></div>
-                  </div>
-                  <div class="x_content">
-                    <br />
-                    <div class="container">
-                      <div class="card uper">
-                        <div class="card-body">
-                          @if ($errors->any())
-                            <div class="alert alert-danger">
-                              <ul>
-                                  @foreach ($errors->all() as $error)
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow components-section">
+                <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
                                     <li>{{ $error }}</li>
-                                  @endforeach
-                              </ul>
-                            </div><br />
-                          @endif
-                          @foreach($salesrequests as $salesrequest)
-                            <form method="post" action="{{ route('biddings.update', $salesrequest->sales_request_id) }}"  enctype="multipart/form-data" class="form-horizontal form-label-left">
-                              @method('PATCH')
-                              @csrf
+                                @endforeach
+                            </ul>
+                        </div><br/>
+                    @endif
+                    @foreach($salesrequests as $salesrequest)
+                        <form method="post"
+                              action="{{ route('biddings.update', $salesrequest->sales_request_id) }}"
+                              enctype="multipart/form-data" class="form-horizontal form-label-left">
+                            @method('PATCH')
+                            @csrf
+                            <div class="row g-2">
                                 @if($salesrequest->reason_for_revision != null)
-                                    <div class="approvebox">
-                                        <div class="form-group" style="padding: 10px;">
-                                            <label class="control-label col-md-3 col-sm-3 col-xs-12 red" style="font-size: 18px" for="category">Reason For Revision:</label>
-                                            <div class="col-md-6 col-sm-6 col-xs-12">
-                                                <textarea type="text" class="form-control" name="reason_for_revision" rows="6" readonly >{{$salesrequest->reason_for_revision}}</textarea>
+                                    <div class="col-12">
+                                        <div class="col">
+                                            <label class="form-label"
+                                                   style="font-size: 18px" for="category">Reason For
+                                                Revision:</label>
+                                            <div class="">
+                                                                    <textarea type="text" class="form-control"
+                                                                              name="reason_for_revision" rows="6"
+                                                                              readonly>{{$salesrequest->reason_for_revision}}</textarea>
                                             </div>
                                         </div>
                                     </div>
                                     <br>
                                 @endif
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="project_manager">Project Manager:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="text" class="form-control" name="project_manager" value="{{ $salesrequest->username }}" disabled/>
-                                </div>
-                              </div>
 
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="sales_request_code">Sales Request Code:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="text" class="form-control" name="sales_request_code" value="{{ $salesrequest->sales_request_code }}" disabled/>
-                                </div>
-                              </div>
-
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="project_title">Project Title:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="text" class="form-control" name="project_title" value="{{ $salesrequest->project_title }}" disabled/>
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="project_code">Project Code:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="text" class="form-control" name="project_code" value="{{ $salesrequest->project_code }}" disabled/>
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="project_status">Project Status:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="text" class="form-control" name="project_status" value="{{ $salesrequest->status }}" disabled/>
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="category">Category:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <select name='category' class="form-control" disabled>
-                                  <option value="Small" {{ ($salesrequest->category=="Small")? "selected" : "" }}>Small</option>
-                                  <option value="Medium" {{ ($salesrequest->category=="Medium")? "selected" : "" }}>Medium</option>
-                                  <option value="Large" {{ ($salesrequest->category=="Large")? "selected" : "" }}>Large</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="category">Single-Line Diagram:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-
-                              <DIV class="table-responsive">
-                                  <table id="projectdesign" class="table table-bordered" width="100%">
-                                    <thead>
-                                        <tr>
-                                          <td>Single Line Digram</td>
-                                        </tr>
-                                    </thead>
-                                    @foreach($slds as $sld)
-                                    <tr><td><a href="/storage/uploads/{{ $sld->sld_file }}" target="_blank" class="clickable">{{$sld->sld_file}}</a></td>
-                                    @endforeach
-                                  </table>
-                              </DIV>
-                            </div>
-                          </div>
-
-                          <div class="form-group">
-                              <label class="control-label col-md-3 col-sm-3 col-xs-12" for="category">Project Design:</label>
-                            <div class="col-md-6 col-sm-6 col-xs-12">
-
-                          <DIV class="table-responsive">
-                              <table id="projectdesign" class="table table-bordered" width="100%">
-                                <thead>
-                                    <tr>
-                                      <td>Bill of Materials</td>
-                                    </tr>
-                                </thead>
-                                @foreach($boms as $bom)
-                                <tr><td><a href="/storage/uploads/{{ $bom->bom_file }}" target="_blank" class="clickable">{{$bom->bom_file}}</a></td>
-                                @endforeach
-                              </table>
-                          </DIV>
-                        </div>
-                      </div>
-
-                      <div class="form-group">
-                          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="category">Layout:</label>
-                        <div class="col-md-6 col-sm-6 col-xs-12">
-
-                      <DIV class="table-responsive">
-                          <table id="projectdesign" class="table table-bordered" width="100%">
-                            <thead>
-                                <tr>
-                                  <td>Layout File</td>
-                                </tr>
-                            </thead>
-                            @foreach($layouts as $layout)
-                            <tr><td><a href="/storage/uploads/{{ $layout->layout_file }}" target="_blank" class="clickable">{{$layout->layout_file}}</a></td>
-                            @endforeach
-                          </table>
-                      </DIV>
-                    </div>
-                  </div>
-
-                              <br>
-                              <div class="approvebox">
-                                Bidders
-
-                                <div class="form-group">
-                                  <br>
-                                  <label class="control-label col-md-2 col-sm-2 col-xs-12"><input type="button" class="btn btn-round btn-primary btn-xs" name="add_item" id="add_item" value="Add More" onClick="addMorebid();"  /></label>
-
-                                  <div class="col-md-8 col-sm-8 col-xs-12">
-                          <DIV class="table-responsive">
-                              <table id="bidders" class="table table-bordered" width="100%">
-                                <thead>
-                                    <tr>
-                                      <td>Trade</td>
-                                      <td>Contractor Name</td>
-                                      <td>Total Cost</td>
-                                      <td></td>
-                                    </tr>
-                                </thead>
-                                <?php $b = 0; ?>
-                                @foreach($biddings as $bidding)
-                                <?php $b = $b + 1; ?>
-                                <tr id="rowb<?php echo $b; ?>">
-                                <td><input type="text" class="form-control" name="bid_trade[]" value="{{ $bidding->bid_trade }}"/></td>
-                                <td><input type="text" class="form-control" name="contractor_name[]" value="{{ $bidding->contractor_name }}"/></td>
-                                <td><input type="text" id="currency{{$b}}" class="form-control" name="total_cost[]" value="{{ $bidding->total_cost }}"/></td>
-
-                                <td><button type="button" name="remove" id="{{ $b}}" class="btn btn-danger btn_remove_bid">X</button></td></tr>
-                                @endforeach
-                                <?php if ($b == 0){ ?>
-                                  <tr id="rowb1">
-                                    <td><input type="text" class="form-control" name="bid_trade[]"/></td>
-                                    <td><input type="text" class="form-control" name="contractor_name[]"/></td>
-                                    <td><input type="text" id="currency{{$b}}" class="form-control" name="total_cost[]"/></td>
-                                  <td><button type="button" name="remove" id="1" class="btn btn-danger btn_remove_bid">X</button></td></tr>
-                                <?php }?>
-                              </table>
-                          </DIV>
-                                  </div>
-
-                                  <div class="form-group">
-                                      <label class="control-label col-md-3 col-sm-3 col-xs-12" for="sales_request_code">Bid File:</label>
-                                    <div class="col-md-6 col-sm-6 col-xs-12">
-                                    <a href="/storage/uploads/{{ $salesrequest->bid_file }}" target="_blank" class="clickable">{{$salesrequest->bid_file}}</a><input type="file" class="form-control-file" name="bid_file" ><input type="hidden" name="existing_bid_file" value="{{$salesrequest->bid_file}}">
+                                <div class="col-6">
+                                    <label class="form-label"
+                                           for="project_manager">Project Manager:</label>
+                                    <div class="">
+                                        <input type="text" class="form-control" name="project_manager"
+                                               value="{{ $salesrequest->username }}" disabled/>
                                     </div>
-                                  </div>
-                                  <div class="form-group">
-                                    <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
-                                  <button type="submit" class="btn btn-primary">Submit</button>
-                                  <a href="{{ action('BiddingController@index',Auth::user()->id) }}"><button type="button" class="btn btn-primary">Cancel</button></a>
-
                                 </div>
+
+                                <div class="col-6">
+                                    <label class="form-label"
+                                           for="sales_request_code">Sales Request Code:</label>
+                                    <div class="">
+                                        <input type="text" class="form-control"
+                                               name="sales_request_code"
+                                               value="{{ $salesrequest->sales_request_code }}"
+                                               disabled/>
+                                    </div>
                                 </div>
+
+
+                                <div class="col-12">
+                                    <label class="form-label"
+                                           for="project_title">Project Title:</label>
+                                    <div class="">
+                                        <input type="text" class="form-control" name="project_title"
+                                               value="{{ $salesrequest->project_title }}" disabled/>
+                                    </div>
                                 </div>
-                          </div>
+
+                                <div class="col-4">
+                                    <label class="form-label"
+                                           for="project_code">Project Code:</label>
+                                    <div class="">
+                                        <input type="text" class="form-control" name="project_code"
+                                               value="{{ $salesrequest->project_code }}" disabled/>
+                                    </div>
+                                </div>
+
+                                <div class="col-4">
+                                    <label class="form-label"
+                                           for="project_status">Project Status:</label>
+                                    <div class="">
+                                        <input type="text" class="form-control" name="project_status"
+                                               value="{{ $salesrequest->status }}" disabled/>
+                                    </div>
+                                </div>
+
+                                <div class="col-4">
+                                    <label class="form-label"
+                                           for="category">Category:</label>
+                                    <div class="">
+                                        <select name='category' class="form-control" disabled>
+                                            <option value="Small" {{ ($salesrequest->category=="Small")? "selected" : "" }}>
+                                                Small
+                                            </option>
+                                            <option value="Medium" {{ ($salesrequest->category=="Medium")? "selected" : "" }}>
+                                                Medium
+                                            </option>
+                                            <option value="Large" {{ ($salesrequest->category=="Large")? "selected" : "" }}>
+                                                Large
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-4">
+                                    <label class="form-label"
+                                           for="category">Single-Line Diagram:</label>
+                                    <div class="">
+
+                                        <DIV class="table-responsive">
+                                            <table id="projectdesign" class="table table-bordered"
+                                                   width="100%">
+                                                <thead>
+                                                <tr>
+                                                    <th>Single Line Digram</th>
+                                                </tr>
+                                                </thead>
+                                                @foreach($slds as $sld)
+                                                    <tr>
+                                                        @if($sld->sld_file != null)
+                                                        <td>
+                                                            <a href="/storage/uploads/{{ $sld->sld_file }}"
+                                                               target="_blank"
+                                                               class="clickable">📂{{$sld->sld_file}}</a>
+                                                        </td>
+                                                    @else
+                                                        <td>NA</td>
+                                                    @endif
+                                                @endforeach
+                                            </table>
+                                        </DIV>
+                                    </div>
+                                </div>
+
+                                <div class="col-4">
+                                    <label class="form-label"
+                                           for="category">Project Design:</label>
+                                    <div class="">
+
+                                        <DIV class="table-responsive">
+                                            <table id="projectdesign" class="table table-bordered"
+                                                   width="100%">
+                                                <thead>
+                                                <tr>
+                                                    <th>Bill of Materials</th>
+                                                </tr>
+                                                </thead>
+                                                @foreach($boms as $bom)
+                                                    <tr>
+                                                        <td>
+                                                            <a href="/storage/uploads/{{ $bom->bom_file }}"
+                                                               target="_blank"
+                                                               class="clickable">📂{{$bom->bom_file}}</a>
+                                                        </td>
+                                                @endforeach
+                                            </table>
+                                        </DIV>
+                                    </div>
+                                </div>
+
+                                <div class="col-4">
+                                    <label class="form-label"
+                                           for="category">Layout:</label>
+                                    <div class="">
+
+                                        <DIV class="table-responsive">
+                                            <table id="projectdesign" class="table table-bordered"
+                                                   width="100%">
+                                                <thead>
+                                                <tr>
+                                                    <th>Layout File</th>
+                                                </tr>
+                                                </thead>
+
+                                                @foreach($layouts as $layout)
+                                                    <tr>
+                                                        @if($layout->layout_file != null)
+                                                        <td>
+                                                            <a href="/storage/uploads/{{ $layout->layout_file }}"
+                                                               target="_blank"
+                                                               class="clickable">📂{{$layout->layout_file}}</a>
+                                                        </td>
+                                                        @else
+                                                            <td>NA</td>
+                                                        @endif
+                                                    </tr>
+                                                @endforeach
+
+                                            </table>
+                                        </DIV>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <hr>
+                            <div class="mt-3">
+                                <h4>Bidders</h4>
+
+                                <div class="col">
+                                    <label class="form-label"><input
+                                                type="button"
+                                                class="btn btn-round btn-primary btn-xs"
+                                                name="add_item" id="add_item" value="Add More"
+                                                onClick="addMorebid();"/></label>
+
+                                    <div class=" mb-3">
+                                        <div class="table-responsive">
+                                            <table id="bidders" class="table table-bordered">
+                                                <thead class="thead-light">
+                                                <tr>
+                                                    <th>Trade</th>
+                                                    <th>Contractor Name</th>
+                                                    <th>Total Cost</th>
+                                                    <th></th>
+                                                </tr>
+                                                </thead>
+                                                <?php $b = 0; ?>
+                                                @foreach($biddings as $bidding)
+                                                    <?php $b = $b + 1; ?>
+                                                    <tr id="rowb<?php echo $b; ?>">
+                                                        <td>
+                                                            <input type="text" class="form-control" name="bid_trade[]" value="{{ $bidding->bid_trade }}"/>
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" class="form-control" name="contractor_name[]" value="{{ $bidding->contractor_name }}"/>
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" id="currency{{$b}}" class="form-control" name="total_cost[]" value="{{ $bidding->total_cost }}"/>
+                                                        </td>
+
+                                                        <td>
+                                                            <button type="button" name="remove"
+                                                                    id="{{ $b}}"
+                                                                    class="btn btn-sm m-0 btn-danger btn_remove_bid">
+                                                                Remove
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                                <?php if ($b == 0){ ?>
+                                                <tr id="rowb1">
+                                                    <td>
+                                                        <input type="text" class="form-control"
+                                                               name="bid_trade[]"/></td>
+                                                    <td>
+                                                        <input type="text" class="form-control"
+                                                               name="contractor_name[]"/></td>
+                                                    <td>
+{{--                                                        <input type="text" id="currency{{$b}}"--}}
+{{--                                                               class="form-control"--}}
+{{--                                                               name="total_cost[]">--}}
+                                                        <input type="text" class="form-control" name="total_cost[]"
+                                                               id="currency-field" data-type="currency">
+                                                    </td>
+
+                                                    <td>
+                                                        <button type="button" name="remove" id="1"
+                                                                class="btn btn-sm m-0 btn-danger btn_remove_bid">
+                                                            Remove
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <?php }?>
+                                            </table>
+                                            <small class="text-danger">* Total Cost column will be hidden to the PM Supervisor.</small>
+                                        </div>
+                                    </div>
 
 
+                                    <div class="row">
+                                        <div class="col mb-3">
+                                            <label class="form-label fw-bolder h6" for="sales_request_code">Bid File <span class="text-danger">(PM Supervisor)</span>:</label>
+                                            <div class="">
+                                                @if($salesrequest->bid_file != null)
+                                                    <a href="/storage/uploads/{{ $salesrequest->bid_file }}" target="_blank"
+                                                       class="badge bg-info">📂{{$salesrequest->bid_file}}</a>
+                                                @endif
+                                                <input type="file" class="form-control" name="bid_file" {{($salesrequest->bid_file == null)? 'required' : ''}}>
+                                                <input type="hidden" name="existing_bid_file" value="{{$salesrequest->bid_file}}">
+                                            </div>
+                                        </div>
 
+                                        <div class=" col mb-3">
+                                            <label class="form-label h6 fw-bolder" for="sales_request_code">Bid File <span class="text-danger">(Revenue)</span>:</label>
+                                            <div class="">
+                                                @if($salesrequest->bid_file_revenue != null)
+                                                    <a href="/storage/uploads/{{ $salesrequest->bid_file_revenue }}" target="_blank"
+                                                       class="badge bg-info">📂{{$salesrequest->bid_file_revenue}}</a>
+                                                @endif
+                                                <input type="file" class="form-control" name="bid_file_revenue" {{($salesrequest->bid_file_revenue == null)? 'required' : ''}}>
+                                                <input type="hidden" name="existing_bid_file_revenue" value="{{$salesrequest->bid_file_revenue}}">
+                                                <small class="text-danger">* The PM Supervisor Role will not view this file, but it will be visible to Revenue Roles.</small>
+                                            </div>
+                                        </div>
+                                    </div>
 
-
-                            </form>
-                            @endforeach
-                        </div>
-
-                    </div>
-                    </div>
-                  </div>
+                                    <div class="">
+                                        <div class="">
+                                            <button type="submit" class="btn btn-primary">Submit</button>
+                                            <a href="{{ action('BiddingController@index',Auth::user()->id) }}">
+                                                <button type="button" class="btn btn-danger">
+                                                    Cancel
+                                                </button>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    @endforeach
                 </div>
-              </div>
             </div>
         </div>
-        <!-- /page content -->
-
-      </div>
     </div>
+@endsection
+@section('script')
+    <script>
+        // Jquery Dependency
+
+        $("input[data-type='currency']").on({
+            keyup: function() {
+                formatCurrency($(this));
+            },
+            blur: function() {
+                formatCurrency($(this), "blur");
+            }
+        });
 
 
-    <!-- Bootstrap -->
-    <script src="../../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
-    <!-- FastClick -->
-    <script src="../../vendors/fastclick/lib/fastclick.js"></script>
-    <!-- NProgress -->
-    <script src="../../vendors/nprogress/nprogress.js"></script>
-    <!-- Chart.js -->
-    <script src="../../vendors/Chart.js/dist/Chart.min.js"></script>
-    <!-- gauge.js -->
-    <script src="../../vendors/gauge.js/dist/gauge.min.js"></script>
-    <!-- bootstrap-progressbar -->
-    <script src="../../vendors/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
-    <!-- iCheck -->
-    <script src="../../vendors/iCheck/icheck.min.js"></script>
-    <!-- Skycons -->
-    <script src="../../vendors/skycons/skycons.js"></script>
-    <!-- Flot -->
-    <script src="../../vendors/Flot/jquery.flot.js"></script>
-    <script src="../../vendors/Flot/jquery.flot.pie.js"></script>
-    <script src="../../vendors/Flot/jquery.flot.time.js"></script>
-    <script src="../../vendors/Flot/jquery.flot.stack.js"></script>
-    <script src="../../vendors/Flot/jquery.flot.resize.js"></script>
-    <!-- Flot plugins -->
-    <script src="../../vendors/flot.orderbars/js/jquery.flot.orderBars.js"></script>
-    <script src="../../vendors/flot-spline/js/jquery.flot.spline.min.js"></script>
-    <script src="../../vendors/flot.curvedlines/curvedLines.js"></script>
-    <!-- DateJS -->
-    <script src="../../vendors/DateJS/build/date.js"></script>
-    <!-- JQVMap -->
-    <script src="../../vendors/jqvmap/dist/jquery.vmap.js"></script>
-    <script src="../../vendors/jqvmap/dist/maps/jquery.vmap.world.js"></script>
-    <script src="../../vendors/jqvmap/examples/js/jquery.vmap.sampledata.js"></script>
-    <!-- bootstrap-daterangepicker -->
-    <script src="../../vendors/moment/min/moment.min.js"></script>
-    <script src="../../vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
-
-    <!-- Custom Theme Scripts -->
-    <script src="../../build/js/custom.min.js"></script>
+        function formatNumber(n) {
+            // format number 1000000 to 1,234,567
+            return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        }
 
 
-  </body>
-</html>
+        function formatCurrency(input, blur) {
+            // appends $ to value, validates decimal side
+            // and puts cursor back in right position.
+
+            // get input value
+            var input_val = input.val();
+
+            // don't validate empty input
+            if (input_val === "") { return; }
+
+            // original length
+            var original_len = input_val.length;
+
+            // initial caret position
+            var caret_pos = input.prop("selectionStart");
+
+            // check for decimal
+            if (input_val.indexOf(".") >= 0) {
+
+                // get position of first decimal
+                // this prevents multiple decimals from
+                // being entered
+                var decimal_pos = input_val.indexOf(".");
+
+                // split number by decimal point
+                var left_side = input_val.substring(0, decimal_pos);
+                var right_side = input_val.substring(decimal_pos);
+
+                // add commas to left side of number
+                left_side = formatNumber(left_side);
+
+                // validate right side
+                right_side = formatNumber(right_side);
+
+                // On blur make sure 2 numbers after decimal
+                if (blur === "blur") {
+                    right_side += "00";
+                }
+
+                // Limit decimal to only 2 digits
+                right_side = right_side.substring(0, 2);
+
+                // join number by .
+                input_val = "" + left_side + "." + right_side;
+
+            } else {
+                // no decimal entered
+                // add commas to number
+                // remove all non-digits
+                input_val = formatNumber(input_val);
+                input_val = "" + input_val;
+
+                // final formatting
+                if (blur === "blur") {
+                    input_val += ".00";
+                }
+            }
+
+            // send updated string to input
+            input.val(input_val);
+
+            // put caret back in the right position
+            var updated_len = input_val.length;
+            caret_pos = updated_len - original_len + caret_pos;
+            input[0].setSelectionRange(caret_pos, caret_pos);
+        }
+
+    </script>
+
+    <script>
+        var i = 30;
+
+        function addMorebid() {
+            i++;
+            $('#bidders').append('<tr id="rowb' + i + '">' +
+                '<td><input type="text" class="form-control" name="bid_trade[]"/>' +
+                '</td>' +
+                '<td>' +
+                '<input type="text" class="form-control" name="contractor_name[]"/>' +
+                '</td><td>' +
+                '<input type="text" class="form-control" name="total_cost[]" id="currency-field" data-type="currency">' +
+                '</td><td>' +
+                '<button type="button" name="remove" id="' + i + '" class="btn btn-sm m-0 btn-danger btn_remove_bid" ">Remove</button>' +
+                '</td></tr> ');
+
+            // Format the new total cost input field as a currency
+            $("input[data-type='currency']").on({
+                keyup: function() {
+                    formatCurrency($(this));
+                },
+                blur: function() {
+                    formatCurrency($(this), "blur");
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $(document).on('click', '.btn_remove_bid', function () {
+                var button_id = $(this).attr("id");
+                $('#rowb' + button_id + '').remove();
+            });
+        });
+    </script>
+
+@endsection

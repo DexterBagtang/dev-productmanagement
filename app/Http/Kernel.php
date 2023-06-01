@@ -62,6 +62,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'revalidate' => \App\Http\Middleware\RevalidateBackHistory::class,
         'timeout' => \App\Http\Middleware\SessionTimeout::class,
+        'active' => \App\Http\Middleware\CheckUserActive::class,
     ];
 
     /**

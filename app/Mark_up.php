@@ -10,6 +10,7 @@ class mark_up extends Model
     'sales_request_id',
     'markup_uploader',
     'mark_up_file',
+      'pnl_file',
     'mark_up_remarks',
     'project_size'
   ];

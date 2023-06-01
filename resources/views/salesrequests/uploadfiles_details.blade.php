@@ -1,195 +1,176 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <!-- Meta, title, CSS, favicons, etc. -->
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" href="images/favicon.ico" type="image/ico" />
+@extends('layout.app')
+@section('link')
 
-    <title>Project Management </title>
-
-    <!-- Bootstrap -->
-    <link href="../../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="../../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
-    <!-- NProgress -->
-    <link href="../../vendors/nprogress/nprogress.css" rel="stylesheet">
-    <!-- iCheck -->
-    <link href="../../vendors/iCheck/skins/flat/green.css" rel="stylesheet">
-
-    <!-- bootstrap-progressbar -->
-    <link href="../../vendors/bootstrap-progressbar/css/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet">
-    <!-- JQVMap -->
-    <link href="../../vendors/jqvmap/dist/jqvmap.min.css" rel="stylesheet"/>
-    <!-- bootstrap-daterangepicker -->
-    <link href="../../vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
-
-    <!-- Custom Theme Style -->
-    <link href="../../build/css/custom.min.css" rel="stylesheet">
-
-    <!-- ICON -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  </head>
-
-  <body class="nav-md">
-    <div class="container body">
-      <div class="main_container">
-        <div class="col-md-3 left_col">
-          <div class="left_col scroll-view">
-            <div class="navbar nav_title" style="border: 0;">
-              <a href="/home" class="site_title"> <img src="../../img/company_logo.png" width = '70%' height = '80%'></a>
-
-            </div>
-            <br />
-            <!-- sidebar menu -->
-
-              @include('side_menu')
-
-            <!-- /sidebar menu -->
-          </div>
-        </div>
-
-        <!-- top navigation -->
-        <div class="top_nav">
-          @include('top_header')
-        </div>
-        <!-- /top navigation -->
-        <!-- page content -->
-        <div class="right_col" role="main">
-                     <div class="row">
-              <div class="col-md-12 col-sm-12 col-xs-12">
-                <div class="x_panel">
-                  <div class="x_title">
-                    <h2>Upload Documents</h2>
-                    <ul class="nav navbar-right panel_toolbox">
-                      <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
-                      </li>
-                      <li><a class="close-link"><i class="fa fa-close"></i></a>
-                      </li>
-                    </ul>
-                    <div class="clearfix"></div>
-                  </div>
-                  <div class="x_content">
-                    <br />
-                    <div class="container">
-                      <div class="card uper">
-                        <div class="card-body">
-                          @if ($errors->any())
-                            <div class="alert alert-danger">
-                              <ul>
-                                  @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                  @endforeach
-                              </ul>
-                            </div><br />
-                          @endif
-                          @foreach($salesrequests as $salesrequest)
-                            <form method="post" action="{{ action('SalesrequestController@uploadfiles',$salesrequest->sales_request_id)}}"  enctype="multipart/form-data" class="form-horizontal form-label-left">
-                              @csrf
-
-
-                              <?php if (Auth::user()->role == '4') { ?>
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="contractor_ntp">Contractor NTP:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="contractor_ntp" >
-                                  <a href="/storage/uploads/{{ $salesrequest->contractor_ntp }}" target="_blank">{{ $salesrequest->contractor_ntp }}</a>
-                                  <input type="hidden" name="existing_contractor_ntp" value="{{$salesrequest->contractor_ntp}}">
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="contractor_po">Contractor PO:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="contractor_po" >
-                                  <a href="/storage/uploads/{{ $salesrequest->contractor_po }}" target="_blank">{{ $salesrequest->contractor_po }}</a>
-                                  <input type="hidden" name="existing_contractor_po" value="{{$salesrequest->contractor_po}}">
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="cari">CARI:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="cari" >
-                                  <a href="/storage/uploads/{{ $salesrequest->cari }}" target="_blank">{{ $salesrequest->cari }}</a>
-                                  <input type="hidden" name="existing_cari" value="{{$salesrequest->cari}}">
-                                </div>
-                              </div>
-                            <?php } else if (Auth::user()->role == '2') {?>
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="cer_files">CER:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="cer_files" >
-                                  <a href="/storage/uploads/{{ $salesrequest->cer_files }}" target="_blank">{{ $salesrequest->cer_files }}</a>
-                                  <input type="hidden" name="existing_cer_files" value="{{$salesrequest->cer_files}}">
-                                </div>
-                              </div>
-
-
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="first_copa">First COPA:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="first_copa" >
-                                  <a href="/storage/uploads/{{ $salesrequest->first_copa }}" target="_blank">{{ $salesrequest->first_copa }}</a>
-                                  <input type="hidden" name="existing_first_copa" value="{{$salesrequest->first_copa}}">
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="second_copa">Second COPA:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="second_copa" >
-                                  <a href="/storage/uploads/{{ $salesrequest->second_copa }}" target="_blank">{{ $salesrequest->second_copa }}</a>
-                                  <input type="hidden" name="existing_second_copa" value="{{$salesrequest->second_copa}}">
-                                </div>
-                              </div>
-
-                              <div class="form-group">
-                                  <label class="control-label col-md-3 col-sm-3 col-xs-12" for="coca">COCA:</label>
-                                <div class="col-md-6 col-sm-6 col-xs-12">
-                                  <input type="file" class="form-control-file" name="coca" >
-                                  <a href="/storage/uploads/{{ $salesrequest->coca }}" target="_blank">{{ $salesrequest->coca }}</a>
-                                  <input type="hidden" name="existing_coca" value="{{$salesrequest->coca}}">
-                                </div>
-                              </div>
-                            <?php }?>
-
-
-                              <div class="form-group">
-                                <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
-                              <button type="submit" class="btn btn-primary">Update</button>
-                              <a href="{{ action('SalesrequestController@viewdocs') }}"><button type="button" class="btn btn-primary">Cancel</button></a>
-                            </div>
-                            </div>
-                            </form>
-                            @endforeach
-                        </div>
-
-                    </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+@endsection
+@section('content')
+    <div class="py-4">
+        <div class="d-flex justify-content-between w-100 flex-wrap">
+            <div class="mb-3 mb-lg-0">
+                <h1 class="h4">Upload Files</h1>
+{{--                <p class="mb-0">Dozens of reusable components built to provide buttons, alerts, popovers, and more.</p>--}}
             </div>
         </div>
-        <!-- /page content -->
-
-      </div>
     </div>
 
-    <!-- jQuery -->
-    <script src="../../vendors/jquery/dist/jquery.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="../../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow components-section">
+                <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div><br/>
+                    @endif
 
-    <!-- DateJS -->
-    <script src="../../vendors/DateJS/build/date.js"></script>
+{{--                  @dd($salesrequests)--}}
+                    @foreach($salesrequests as $salesrequest)
+                        <form method="post"
+                              action="{{ action('SalesrequestController@uploadfiles',$salesrequest->sales_request_id)}}"
+                              enctype="multipart/form-data" class="form-horizontal form-label-left">
+                            @csrf
 
-    <!-- Custom Theme Scripts -->
-    <script src="../../build/js/custom.min.js"></script>
 
-  </body>
-</html>
+                            @if (Auth::user()->role == '4' || Auth::user()->role == '5')
+                                <div class="row mb-3">
+                                    <label class="col-form-label" for="contractor_ntp">Contractor
+                                        NTP:</label>
+                                  @if($salesrequest->contractor_ntp != null || $salesrequest->contractor_ntp != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->contractor_ntp }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->contractor_ntp }}</a>
+                                    </div>
+                                  @endif
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="contractor_ntp">
+                                    </div>
+                                    <input type="hidden" name="existing_contractor_ntp"
+                                           value="{{$salesrequest->contractor_ntp}}">
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label class="col-form-label" for="contractor_po">Contractor
+                                        PO:</label>
+                                  @if($salesrequest->contractor_po != null || $salesrequest->contractor_po != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->contractor_po }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->contractor_po }}</a>
+                                    </div>
+                                  @endif
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="contractor_po">
+                                        <input type="hidden" name="existing_contractor_po"
+                                               value="{{$salesrequest->contractor_po}}">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label class="col-form-label" for="cari">CARI:</label>
+                                  @if($salesrequest->cari != null || $salesrequest->cari != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->cari }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->cari }}</a>
+                                    </div>
+                                  @endif
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="cari">
+                                        <input type="hidden" name="existing_cari" value="{{$salesrequest->cari}}">
+                                    </div>
+                                </div>
+                            @elseif (Auth::user()->role == '8')
+
+                                <div class="row mb-3">
+                                    <label class="col-form-label"
+                                           for="cer_files">CER:</label>
+                                  @if($salesrequest->cer_files != null || $salesrequest->cer_files != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->cer_files }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->cer_files }}</a>
+                                    </div>
+                                  @endif
+
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="cer_files">
+                                        <input type="hidden" name="existing_cer_files"
+                                               value="{{$salesrequest->cer_files}}">
+                                    </div>
+                                </div>
+
+
+
+                                <div class="row mb-3">
+                                    <label class="col-form-label" for="first_copa">First
+                                        COPA:</label>
+                                  @if($salesrequest->first_copa != null || $salesrequest->first_copa != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->first_copa }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->first_copa }}</a>
+                                    </div>
+                                  @endif
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="first_copa">
+                                        <input type="hidden" name="existing_first_copa"
+                                               value="{{$salesrequest->first_copa}}">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label class="col-form-label" for="second_copa">Second
+                                        COPA:</label>
+                                  @if($salesrequest->second_copa != null || $salesrequest->second_copa != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->second_copa }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->second_copa }}</a>
+                                    </div>
+                                  @endif
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="second_copa">
+                                    </div>
+                                    <input type="hidden" name="existing_second_copa"
+                                           value="{{$salesrequest->second_copa}}">
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label class="col-form-label" for="coca">COCA:</label>
+                                  @if($salesrequest->coca != null || $salesrequest->coca != "")
+                                    <div>
+                                        <a href="/storage/uploads/{{ $salesrequest->coca }}"
+                                           class="btn btn-sm btn-outline-info"
+                                           target="_blank">📂{{ $salesrequest->coca }}</a>
+                                    </div>
+                                  @endif
+                                    <div class="col-md-6 col-sm-6 col-xs-12">
+                                        <input type="file" class="form-control" name="coca">
+                                    </div>
+                                    <input type="hidden" name="existing_coca" value="{{$salesrequest->coca}}">
+                                </div>
+                            @endif
+
+
+                            <div class="row mb-3">
+                                <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                    <a href="{{ action('SalesrequestController@viewdocs') }}">
+                                        <button type="button" class="btn btn-primary">Cancel</button>
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+@section('script')
+
+@endsection
